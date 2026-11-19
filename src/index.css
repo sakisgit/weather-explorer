@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+
+/* The app fills the whole viewport: the map is the "stage" and must never scroll away. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-950 text-slate-100 antialiased;
+}
