@@ -1,3 +1,5 @@
+import { ApiDemo } from './components/ApiDemo'
+
 /**
  * Root layout.
  *
@@ -16,7 +18,7 @@ function App() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-400">
-          Search, place details and saved places will live here.
+          <ApiDemo />
         </div>
       </aside>
 
