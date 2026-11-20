@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
 import { CircleMarker, MapContainer, TileLayer, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
+import type { LatLon } from '../../api/types'
 import type { Place } from '../../types'
 import { placeFromCoords } from '../../utils/places'
 
 interface Props {
   selected: Place | null
+  /** The user's own position (from geolocation), shown with its own marker. */
+  myLocation: LatLon | null
   onSelect: (place: Place) => void
 }
 
@@ -19,7 +22,7 @@ const INITIAL_ZOOM = 4
  * components that use the `useMap` / `useMapEvents` hooks. Those hooks only
  * work INSIDE <MapContainer>, which is why they're separate components below.
  */
-export function WeatherMap({ selected, onSelect }: Props) {
+export function WeatherMap({ selected, myLocation, onSelect }: Props) {
   return (
     <MapContainer
       center={INITIAL_CENTER}
@@ -48,11 +51,28 @@ export function WeatherMap({ selected, onSelect }: Props) {
         CircleMarker is drawn as SVG, so it avoids Leaflet's well-known
         "missing default marker icon" problem with bundlers like Vite.
       */}
+      {/* The user's position stays visible even after selecting other places. */}
+      {myLocation && (
+        <CircleMarker
+          center={[myLocation.lat, myLocation.lon]}
+          radius={6}
+          pathOptions={{ color: '#fff', weight: 2, fillColor: '#22c55e', fillOpacity: 1 }}
+          // Don't let the click also reach the map (which would select raw coordinates)
+          bubblingMouseEvents={false}
+          eventHandlers={{ click: () => onSelect(placeFromCoords(myLocation.lat, myLocation.lon, 'My location')) }}
+        >
+          <Tooltip direction="top" offset={[0, -6]}>
+            You are here
+          </Tooltip>
+        </CircleMarker>
+      )}
+
       {selected && (
         <CircleMarker
           center={[selected.lat, selected.lon]}
           radius={9}
           pathOptions={{ color: '#fff', weight: 2, fillColor: '#0ea5e9', fillOpacity: 1 }}
+          bubblingMouseEvents={false}
         >
           <Tooltip direction="top" offset={[0, -8]}>
             {selected.name}
