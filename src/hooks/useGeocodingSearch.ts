@@ -11,10 +11,12 @@ const MIN_CHARS = 2
  * 3. cache: searching "Paris" twice only hits the network once (key is lowercased)
  *
  * keepPreviousData keeps the old results visible while the new ones load,
- * so the dropdown doesn't flicker on every keystroke.
+ * so the dropdown doesn't flicker on every keystroke. Those old results are
+ * flagged with `outdated`, so Enter can't pick a result of an earlier search.
  */
 export function useGeocodingSearch(query: string) {
-  const debounced = useDebouncedValue(query.trim().toLowerCase(), 300)
+  const normalized = query.trim().toLowerCase()
+  const debounced = useDebouncedValue(normalized, 300)
   const enabled = debounced.length >= MIN_CHARS
 
   const result = useQuery({
@@ -25,5 +27,9 @@ export function useGeocodingSearch(query: string) {
     placeholderData: keepPreviousData,
   })
 
-  return { ...result, enabled }
+  // The results on screen don't match the text yet: still waiting for the debounce, for the
+  // new request (old results shown meanwhile), or for the very first results.
+  const outdated = debounced !== normalized || result.isPlaceholderData || (enabled && result.isPending)
+
+  return { ...result, enabled, outdated }
 }

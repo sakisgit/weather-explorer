@@ -11,7 +11,7 @@ Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.co
 - **TV-forecast-style map overview.** Cities with a weather icon and a temperature colored on a scale. More cities appear as you zoom in, and labels never overlap.
 - **Timeline with play.** A timeline at the bottom of the map, with the days marked on it. Scrub through the next 48 hours, or press play to watch the weather move across the map once (it stops at +48 h; press again to replay). The temperature color scale sits separately above the zoom buttons.
 - **Place details.** Current conditions (feels like, humidity, wind), a 48-hour temperature and rain chart, and a 7-day forecast. The chart line is colored with the same temperature scale as the map, the high and low are marked, midnight is shown as a dashed day line, and hovering shows a crosshair with a tooltip.
-- **Search.** Debounced place search with keyboard navigation (↑ ↓ Enter Esc). The map flies to the selected place.
+- **Search.** Debounced place search with keyboard navigation (↑ ↓ Enter Esc), a clear button and a loading spinner. Press `/` anywhere to jump to it. Pressing Enter before the results have caught up with your typing opens the right place once they arrive, never a result of the previous search. The map flies to the selected place.
 - **Click anywhere on the map** to get the forecast for that point.
 - **Current location.** A "My location" button. Returning users who already granted permission are located automatically.
 - **My places.** Save up to 12 places (persisted in `localStorage`) and compare them: current weather, today's high/low and rain chance, sorting by temperature, and a 7-day high-temperature chart.
