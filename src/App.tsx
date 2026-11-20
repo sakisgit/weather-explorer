@@ -108,11 +108,16 @@ function App() {
         )}
       </aside>
 
-      <main className={`relative order-1 min-h-0 flex-1 md:order-2 md:h-full ${panelOpen ? 'h-1/2' : ''}`}>
+      <main className={`@container relative order-1 min-h-0 flex-1 md:order-2 md:h-full ${panelOpen ? 'h-1/2' : ''}`}>
         <WeatherMap selected={selected} myLocation={myLocation} onSelect={selectPlace} />
 
+        {/*
+          The map is a CSS container (@container above): the floating controls adapt to the
+          MAP's width (@lg:, @2xl:), not the screen's. With the side panel open on a tablet,
+          the screen is wide but the map is narrow.
+        */}
         {/* Floats above the map. Leaflet panes use z-index up to ~1000, so we go higher. */}
-        <div className="absolute top-3 right-3 left-3 z-[1100] sm:right-auto sm:w-[27rem]">
+        <div className="absolute top-3 right-3 left-3 z-[1100] @lg:right-auto @lg:w-[27rem]">
           {/* data-map-obstacle: the map won't place city labels under this element */}
           <div className="flex gap-2" data-map-obstacle>
             <div className="flex-1">

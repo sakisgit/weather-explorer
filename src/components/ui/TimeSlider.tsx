@@ -85,16 +85,16 @@ export function TimeSlider({
             style={{ '--progress': `${(value / max) * 100}%` } as React.CSSProperties}
           />
           {/* Day names under the track, where each day starts (in the viewer's time zone).
-              On phones the track is short, so only the day names are shown. */}
+              On a narrow map the track is short, so only the day names are shown. */}
           <div className="absolute inset-x-0 bottom-0 h-3.5 text-[10px] text-slate-500" aria-hidden>
-            <span className="absolute left-0 hidden sm:inline">Now</span>
+            <span className="absolute left-0 hidden @2xl:inline">Now</span>
             {dayTicks.map((tick) => (
               <span key={tick.label} className="absolute -translate-x-1/2" style={{ left: along(tick.position) }}>
                 <span className="absolute -top-2.5 left-1/2 h-1.5 w-px bg-slate-500" />
                 {tick.label}
               </span>
             ))}
-            <span className="absolute right-0 hidden sm:inline">+{max}h</span>
+            <span className="absolute right-0 hidden @2xl:inline">+{max}h</span>
           </div>
         </div>
       )}

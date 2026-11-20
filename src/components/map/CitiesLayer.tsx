@@ -264,10 +264,11 @@ function Timeline({ collapsed, children }: { collapsed: boolean; children: React
     <div
       ref={ref}
       data-map-obstacle // the map won't place city labels under this bar
-      // Phones: above the attribution (two lines there). Desktop: centered, at most 36rem wide,
+      // Narrow map (phones, tablets with the panel open): above the attribution, which wraps to
+      // two lines there. Wide map (@2xl = 42rem+, a container query on the map): centered, at most 36rem wide,
       // leaving room for the zoom buttons. Collapsed: only as wide as its content.
-      className={`absolute bottom-12 left-3 z-[1000] rounded-xl border border-slate-700/60 bg-slate-900/90 py-2 pr-2 pl-2 text-slate-300 shadow-lg backdrop-blur sm:bottom-6 sm:left-1/2 sm:-translate-x-1/2 sm:pr-3 ${
-        collapsed ? '' : 'right-14 sm:right-auto sm:w-[min(36rem,calc(100%-9rem))]'
+      className={`absolute bottom-12 left-3 z-[1000] rounded-xl border border-slate-700/60 bg-slate-900/90 py-2 pr-2 pl-2 text-slate-300 shadow-lg backdrop-blur @2xl:bottom-6 @2xl:left-1/2 @2xl:-translate-x-1/2 @2xl:pr-3 ${
+        collapsed ? '' : 'right-14 @2xl:right-auto @2xl:w-[min(36rem,calc(100%-9rem))]'
       }`}
     >
       {children}

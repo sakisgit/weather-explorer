@@ -12,13 +12,14 @@ const LABELS = ['40°', '20°', '0°', '-20°']
  * It is a real Leaflet control (bottom-right corner), so Leaflet stacks it above
  * the zoom buttons and the attribution by itself, whatever their height.
  * The control only provides the DOM element; React renders into it with a portal.
- * Hidden on phones, where the map is small and the colors speak for themselves.
+ * Hidden on a narrow map (container query on the map's width) and on short screens
+ * (e.g. a phone in landscape), where it wouldn't fit above the zoom buttons.
  */
 export function TemperatureLegend() {
   const map = useMap()
   // The element Leaflet places in its corner. `data-map-obstacle`: no city labels under it.
   const [container] = useState(() => {
-    const el = L.DomUtil.create('div', 'leaflet-control hidden sm:block')
+    const el = L.DomUtil.create('div', 'leaflet-control hidden @md:block [@media(max-height:560px)]:hidden')
     el.setAttribute('data-map-obstacle', '')
     return el
   })
