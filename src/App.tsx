@@ -3,6 +3,7 @@ import type { LatLon } from './api/types'
 import { WeatherMap } from './components/map/WeatherMap'
 import { PlaceDetails } from './components/panels/PlaceDetails'
 import { SavedPlaces } from './components/panels/SavedPlaces'
+import { ChevronRight, MapPin, Star, X } from 'lucide-react'
 import { BasemapSwitcher } from './components/ui/BasemapSwitcher'
 import { LocateButton } from './components/ui/LocateButton'
 import { SearchBox } from './components/ui/SearchBox'
@@ -87,7 +88,8 @@ function App() {
                 Details
               </TabButton>
               <TabButton active={tab === 'places'} onClick={() => setTab('places')}>
-                ★ My places{savedCount > 0 && <span className="ml-1 text-slate-400">({savedCount})</span>}
+                <Star className="mr-1 inline h-3.5 w-3.5 -translate-y-px" aria-hidden />
+                My places{savedCount > 0 && <span className="ml-1 text-slate-400">({savedCount})</span>}
               </TabButton>
             </nav>
           )}
@@ -127,7 +129,7 @@ function App() {
             >
               <span className="flex-1">{geo.error}</span>
               <button onClick={geo.clearError} aria-label="Dismiss" className="text-amber-400 hover:text-amber-200">
-                ✕
+                <X className="h-4 w-4" aria-hidden />
               </button>
             </div>
           )}
@@ -168,19 +170,12 @@ function PanelToggle({ open, onClick }: { open: boolean; onClick: () => void }) 
       title={open ? 'Collapse panel' : 'Expand panel'}
       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-sky-500 hover:text-sky-400"
     >
-      <svg
-        viewBox="0 0 24 24"
+      {/* Chevron pointing right; the rotation turns it */}
+      <ChevronRight
         className={`h-4 w-4 transition-transform ${open ? 'rotate-90 md:rotate-180' : '-rotate-90 md:rotate-0'}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeWidth={2.5}
         aria-hidden
-      >
-        {/* Chevron pointing right; the rotation above turns it */}
-        <path d="m9 6 6 6-6 6" />
-      </svg>
+      />
     </button>
   )
 }
@@ -191,9 +186,10 @@ function EmptyState({ onLocate }: { onLocate: () => void }) {
       <p>Search for a city, click a city or anywhere on the map, or see the weather where you are.</p>
       <button
         onClick={onLocate}
-        className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
+        className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
       >
-        📍 Use my location
+        <MapPin className="h-4 w-4" aria-hidden />
+        Use my location
       </button>
     </div>
   )

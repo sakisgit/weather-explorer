@@ -1,3 +1,4 @@
+import { Star, X } from 'lucide-react'
 import { Suspense, lazy, useMemo, useState } from 'react'
 import type { CompareResponse } from '../../api/types'
 import { compareKey, useCompareForecast } from '../../hooks/useForecast'
@@ -7,6 +8,7 @@ import { formatTemp } from '../../utils/format'
 import { temperatureColor } from '../../utils/temperatureColor'
 import { getWeatherInfo } from '../../utils/weatherCodes'
 import { ChartPlaceholder } from '../ui/ChartPlaceholder'
+import { WeatherIcon } from '../ui/WeatherIcon'
 
 // Lazy-loaded like ForecastChart (see PlaceDetails): Chart.js downloads on first use.
 const CompareChart = lazy(() => import('./CompareChart').then((m) => ({ default: m.CompareChart })))
@@ -50,7 +52,9 @@ export function SavedPlaces({ onSelect }: Props) {
       <div className="space-y-2 text-sm text-slate-400">
         <p className="text-base text-slate-200">No saved places yet</p>
         <p>
-          Open any place and press <span className="text-amber-300">☆ Save</span> to build your own collection. Saved
+          Open any place and press <span className="inline-flex items-center gap-1 text-amber-300">
+            <Star className="h-3.5 w-3.5" aria-hidden /> Save
+          </span> to build your own collection. Saved
           places are compared side by side here and marked with a star on the map.
         </p>
       </div>
@@ -99,7 +103,7 @@ export function SavedPlaces({ onSelect }: Props) {
               aria-label={`Remove ${place.name}`}
               className="mr-2 rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-slate-200"
             >
-              ✕
+              <X className="h-4 w-4" aria-hidden />
             </button>
           </li>
         ))}
@@ -125,9 +129,7 @@ function PlaceSummary({ place, forecast }: { place: Place; forecast: CompareResp
 
   return (
     <>
-      <span className="text-2xl" title={info.label} aria-hidden>
-        {info.icon}
-      </span>
+      <WeatherIcon name={info.icon} label={info.label} className="-my-2 h-12 w-12 shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm text-slate-100">{place.name}</div>
         <div className="truncate text-xs text-slate-400">
@@ -147,7 +149,7 @@ function PlaceSummary({ place, forecast }: { place: Place; forecast: CompareResp
 function RowSkeleton({ name, loading }: { name: string; loading: boolean }) {
   return (
     <>
-      <span className={`h-7 w-7 rounded-full bg-slate-700 ${loading ? 'animate-pulse' : ''}`} />
+      <span className={`mx-1.5 h-9 w-9 shrink-0 rounded-full bg-slate-700 ${loading ? 'animate-pulse' : ''}`} />
       <div className="flex-1 truncate text-sm text-slate-100">{name}</div>
     </>
   )

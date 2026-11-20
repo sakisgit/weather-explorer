@@ -1,3 +1,5 @@
+import { Pause, Play } from 'lucide-react'
+
 interface Props {
   /** Hours from now (0..max). */
   value: number
@@ -33,14 +35,9 @@ export function TimeSlider({ value, max, onChange, playing, onTogglePlay, label,
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white hover:bg-sky-500"
         >
           {playing ? (
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
-              <rect x="6" y="5" width="4" height="14" rx="1" />
-              <rect x="14" y="5" width="4" height="14" rx="1" />
-            </svg>
+            <Pause className="h-3.5 w-3.5" fill="currentColor" aria-hidden />
           ) : (
-            <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5" fill="currentColor" aria-hidden>
-              <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
-            </svg>
+            <Play className="ml-0.5 h-3.5 w-3.5" fill="currentColor" aria-hidden />
           )}
         </button>
         <div className="flex-1 text-sm whitespace-nowrap text-slate-100" aria-live="off">

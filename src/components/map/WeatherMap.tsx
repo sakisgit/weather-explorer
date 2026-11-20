@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react'
 import { useEffect } from 'react'
 import { CircleMarker, MapContainer, Pane, TileLayer, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLon } from '../../api/types'
@@ -182,7 +183,8 @@ function SavedPlacesMarkers({ onSelect }: { onSelect: (place: Place) => void }) 
       eventHandlers={{ click: () => onSelect(place) }}
     >
       <Tooltip direction="top" offset={[0, -5]}>
-        ★ {place.name}
+        <Star className="mr-1 inline h-3 w-3 -translate-y-px text-amber-500" fill="currentColor" aria-hidden />
+        {place.name}
       </Tooltip>
     </CircleMarker>
   ))

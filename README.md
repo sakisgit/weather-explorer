@@ -10,7 +10,7 @@ Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.co
 
 - **TV-forecast-style map overview.** Cities with a weather icon and a temperature colored on a scale. More cities appear as you zoom in, and labels never overlap.
 - **Time slider with play.** Scrub through the next 48 hours, or press play to watch the weather move across the map.
-- **Place details.** Current conditions (feels like, humidity, wind), a 48-hour temperature and rain chart, and a 7-day forecast.
+- **Place details.** Current conditions (feels like, humidity, wind), a 48-hour temperature and rain chart, and a 7-day forecast. The chart line is colored with the same temperature scale as the map, the high and low are marked, midnight is shown as a dashed day line, and hovering shows a crosshair with a tooltip.
 - **Search.** Debounced place search with keyboard navigation (↑ ↓ Enter Esc). The map flies to the selected place.
 - **Click anywhere on the map** to get the forecast for that point.
 - **Current location.** A "My location" button. Returning users who already granted permission are located automatically.
@@ -55,6 +55,7 @@ No `.env` file or API keys are needed. Open-Meteo is free for non-commercial use
 | Map | **Leaflet + react-leaflet** | Lightweight, mature, no key needed. |
 | Charts | **Chart.js + react-chartjs-2** | Tree-shakeable; mixed line and bar charts with two y-axes. |
 | Styling | **Tailwind CSS v4** | Fast to iterate, consistent design tokens. |
+| Icons | **Meteocons** (weather) + **lucide-react** (UI) | Colored, animated weather icons that read like a weather app; one consistent, tree-shakeable set for the buttons. |
 
 I chose React because it is what I know best. The role mentions Vue/Nuxt as a plus, and I am keen to learn them. The architecture (API layer, data hooks, stores, presentational components) maps directly onto Vue composables and Pinia.
 
@@ -93,6 +94,7 @@ Open-Meteo's free tier allows roughly 600 calls per minute and 10,000 per day **
 
 - **Cities instead of a regular grid.** My first version drew a regular grid of points. It looked mechanical, hid the basemap and showed nameless points in the sea, so I replaced it with a curated list of about 190 cities in three importance tiers. Visible cities are picked by zoom level, and a collision check in screen pixels (Web Mercator, `L.CRS.EPSG3857`) makes sure the more important city wins when labels would overlap. Labels are also kept out from under the floating UI (search box, time slider): those elements are marked with `data-map-obstacle`, and their screen rectangles are read from the DOM, so this keeps working when the layout changes on mobile. Cities that would be hidden are not requested either. A static list costs no requests and gives the map real names.
 - **Time zones.** Place details use `timezone=auto`, so times are local to the place (Tokyo shows Tokyo time). Times are read from the string instead of `new Date()`, so they are not shifted into the viewer's time zone. The map overview uses UTC, so all cities share one clock and the slider shows the same moment everywhere; its label is shown in the viewer's own time zone.
+- **Weather icons as static files.** The Meteocons SVGs live in `public/weather-icons/`, so the browser downloads only the ones on screen and caches them, and they add nothing to the JavaScript bundle. The panel uses the animated versions; the map uses static ones, because 50+ icons moving at once would distract and cost CPU.
 - **Lazy-loaded charts.** Chart.js was about a third of the bundle but is only needed once a place is opened. Both chart components are loaded with `React.lazy` + `Suspense` (with a placeholder of the same height, so the layout doesn't jump), which takes the initial JavaScript from 202 kB to 139 kB gzipped and removes Vite's large-chunk warning.
 - **Geolocation.** The app never shows the permission prompt on page load, because unprompted requests tend to get denied permanently. It uses the Permissions API to locate automatically only if permission was already granted; otherwise it waits for a click. Errors (denied, unavailable, timeout) show friendly messages with alternatives.
 - **Basemap.** Esri "World Dark Gray" tiles: no API key, and a muted dark style that lets the weather data stand out. CARTO dark tiles were my first choice, but they now require an API key, and a key in a public, client-side app would be visible to everyone.
@@ -127,4 +129,4 @@ All the requirements in the brief are implemented. Known limitations:
   - Testing in the browser revealed a hover text that did not follow the time slider (react-leaflet only reads a marker's `title` on creation).
   - An index-based match between saved places and API results could show the wrong weather after a removal. It now matches by coordinates.
 - **Commit history.** Each step of the build is a separate commit with a description of what changed and why.
-- **Credits.** Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0). Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors. Attribution is shown on the map.
+- **Credits.** Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0). Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors. Attribution is shown on the map. Weather icons: [Meteocons](https://github.com/basmilius/weather-icons) by Bas Milius (MIT, license in `public/weather-icons/`). UI icons: [Lucide](https://lucide.dev) (ISC).

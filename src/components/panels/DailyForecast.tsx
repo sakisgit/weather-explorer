@@ -1,6 +1,7 @@
 import type { DailyWeather } from '../../api/types'
 import { formatTemp, formatWeekday } from '../../utils/format'
 import { getWeatherInfo } from '../../utils/weatherCodes'
+import { WeatherIcon } from '../ui/WeatherIcon'
 
 /**
  * 7-day forecast. Each row has a min-max bar positioned on the WEEK's
@@ -20,11 +21,9 @@ export function DailyForecast({ daily }: { daily: DailyWeather }) {
         const rain = daily.precipitation_probability_max[i]
 
         return (
-          <li key={date} className="grid grid-cols-[3rem_1.75rem_2.5rem_1fr_2.5rem] items-center gap-2 py-2 text-sm">
+          <li key={date} className="grid grid-cols-[3rem_2.25rem_2.5rem_1fr_2.5rem] items-center gap-2 py-1.5 text-sm">
             <span className="text-slate-300">{i === 0 ? 'Today' : formatWeekday(date)}</span>
-            <span title={info.label} aria-label={info.label} className="text-lg">
-              {info.icon}
-            </span>
+            <WeatherIcon name={info.icon} label={info.label} className="h-9 w-9" />
             <span className="text-xs text-sky-400">{rain >= 10 ? `${rain}%` : ''}</span>
             <div className="flex items-center gap-2">
               <span className="w-8 text-right text-slate-400">{formatTemp(min)}</span>

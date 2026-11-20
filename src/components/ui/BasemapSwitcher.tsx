@@ -1,3 +1,4 @@
+import { Check, Layers } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { BASEMAPS, BASEMAP_IDS } from '../../data/basemaps'
 import { useUiStore } from '../../store/useUiStore'
@@ -38,20 +39,7 @@ export function BasemapSwitcher() {
         title="Map style"
         className="flex h-[42px] w-[42px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900/90 text-slate-200 shadow-lg backdrop-blur hover:border-sky-500 hover:text-sky-400"
       >
-        {/* "Layers" icon */}
-        <svg
-          viewBox="0 0 24 24"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M12 3 2 8l10 5 10-5-10-5z" />
-          <path d="m2 12 10 5 10-5" />
-          <path d="m2 16 10 5 10-5" />
-        </svg>
+        <Layers className="h-5 w-5" aria-hidden />
       </button>
 
       {open && (
@@ -80,7 +68,7 @@ export function BasemapSwitcher() {
                 aria-hidden
               />
               <span className="flex-1">{BASEMAPS[id].label}</span>
-              {basemap === id && <span aria-hidden>✓</span>}
+              {basemap === id && <Check className="h-4 w-4" aria-hidden />}
             </button>
           ))}
         </div>

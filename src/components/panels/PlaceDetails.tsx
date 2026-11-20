@@ -1,3 +1,4 @@
+import { Droplets, Thermometer, Wind } from 'lucide-react'
 import { Suspense, lazy } from 'react'
 import { useForecast } from '../../hooks/useForecast'
 import type { Place } from '../../types'
@@ -5,6 +6,7 @@ import { degreesToCompass, formatHour, formatTemp, toHourSlot } from '../../util
 import { getWeatherInfo } from '../../utils/weatherCodes'
 import { ChartPlaceholder } from '../ui/ChartPlaceholder'
 import { SaveButton } from '../ui/SaveButton'
+import { WeatherIcon } from '../ui/WeatherIcon'
 import { DailyForecast } from './DailyForecast'
 
 // Lazy-loaded: Chart.js is most of the bundle and isn't needed until a place is opened,
@@ -56,9 +58,7 @@ function DetailsContent({ data }: { data: NonNullable<ReturnType<typeof useForec
     <>
       <section aria-label="Current conditions" className="rounded-xl bg-slate-800/60 p-4">
         <div className="flex items-center gap-4">
-          <span className="text-5xl" aria-hidden>
-            {info.icon}
-          </span>
+          <WeatherIcon name={info.icon} className="-my-2 -ml-2 h-24 w-24 shrink-0" />
           <div>
             <div className="text-4xl font-light text-slate-100">{formatTemp(current.temperature_2m)}C</div>
             <div className="text-sm text-slate-300">{info.label}</div>
@@ -66,9 +66,10 @@ function DetailsContent({ data }: { data: NonNullable<ReturnType<typeof useForec
         </div>
 
         <dl className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-          <Stat label="Feels like" value={formatTemp(current.apparent_temperature)} />
-          <Stat label="Humidity" value={`${current.relative_humidity_2m}%`} />
+          <Stat icon={<Thermometer />} label="Feels like" value={formatTemp(current.apparent_temperature)} />
+          <Stat icon={<Droplets />} label="Humidity" value={`${current.relative_humidity_2m}%`} />
           <Stat
+            icon={<Wind />}
             label="Wind"
             value={`${Math.round(current.wind_speed_10m)} km/h ${degreesToCompass(current.wind_direction_10m)}`}
           />
@@ -95,10 +96,13 @@ function DetailsContent({ data }: { data: NonNullable<ReturnType<typeof useForec
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-900/60 p-2">
-      <dt className="text-slate-400">{label}</dt>
+      <dt className="flex items-center justify-center gap-1 text-slate-400 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:text-sky-400">
+        {icon}
+        {label}
+      </dt>
       <dd className="mt-0.5 text-sm text-slate-100">{value}</dd>
     </div>
   )

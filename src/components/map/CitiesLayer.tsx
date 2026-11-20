@@ -1,4 +1,5 @@
 import L from 'leaflet'
+import { ChevronRight } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Marker, Pane, useMap, useMapEvents } from 'react-leaflet'
 import { useCurrentUtcHour } from '../../hooks/useCurrentUtcHour'
@@ -12,8 +13,15 @@ import { readObstacles } from '../../utils/mapObstacles'
 import { type MapView, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
 import { temperatureColor, temperatureGradientCss } from '../../utils/temperatureColor'
 import { addHoursToSlot, formatSlotForUser } from '../../utils/time'
-import { getWeatherInfo } from '../../utils/weatherCodes'
+import { getWeatherInfo, weatherIconUrl } from '../../utils/weatherCodes'
 import { TimeSlider } from '../ui/TimeSlider'
+
+/**
+ * Lucide's star as an HTML string: the city labels are plain HTML (a Leaflet DivIcon),
+ * not React, so the icon component can't be used there.
+ */
+const STAR_SVG =
+  '<svg class="city-star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>'
 
 interface Props {
   selected: Place | null
@@ -195,8 +203,8 @@ const CityMarker = memo(function CityMarker({
         // The hover text lives in the HTML: it is rebuilt with the icon, so it always matches
         // the displayed hour (Leaflet's `title` option is only read once, when the marker is created).
         html: `<div class="${labelClass}" style="--temp-color:${color}" title="${city.name}: ${info.label}, ${rounded}°C">
-                 <div class="city-row"><span class="city-icon" aria-hidden="true">${info.icon}</span><span class="city-temp">${rounded}°</span></div>
-                 <div class="city-name">${saved ? '<span class="city-star">★</span> ' : ''}${city.name}</div>
+                 <div class="city-row"><img class="city-icon" src="${weatherIconUrl(info.icon, false)}" alt="" /><span class="city-temp">${rounded}°</span></div>
+                 <div class="city-name">${saved ? STAR_SVG : ''}${city.name}</div>
                </div>`,
       }),
     [color, info.icon, info.label, rounded, city.name, labelClass, saved],
@@ -285,18 +293,11 @@ function CollapseButton({ open, onClick }: { open: boolean; onClick: () => void 
       title={open ? 'Collapse' : 'Expand'}
       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-800 hover:text-sky-400"
     >
-      <svg
-        viewBox="0 0 24 24"
+      <ChevronRight
         className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : '-rotate-90'}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeWidth={2.5}
         aria-hidden
-      >
-        <path d="m9 6 6 6-6 6" />
-      </svg>
+      />
     </button>
   )
 }

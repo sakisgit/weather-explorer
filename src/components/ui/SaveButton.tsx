@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react'
 import { MAX_SAVED_PLACES, usePlacesStore } from '../../store/usePlacesStore'
 import type { Place } from '../../types'
 
@@ -24,7 +25,8 @@ export function SaveButton({ place }: { place: Place }) {
           : 'border-slate-700 text-slate-300 hover:border-amber-500/60 hover:text-amber-300'
       }`}
     >
-      <span aria-hidden>{isSaved ? '★' : '☆'}</span>
+      {/* Filled star when saved, outline when not */}
+      <Star className="h-4 w-4" fill={isSaved ? 'currentColor' : 'none'} aria-hidden />
       {isSaved ? 'Saved' : 'Save'}
     </button>
   )

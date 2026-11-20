@@ -87,10 +87,11 @@ body {
 .city-row {
   @apply flex items-center gap-1;
 }
+/* Meteocons SVG (static version). The icons have built-in padding, hence the negative margin. */
 .city-icon {
-  font-size: 26px;
-  /* Force the color emoji font, otherwise some browsers draw monochrome symbols */
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  width: 40px;
+  height: 40px;
+  margin: -6px -4px -6px -6px;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
 }
 .city-temp {
@@ -101,6 +102,11 @@ body {
   @apply mt-0.5 text-[11px] font-medium text-slate-100;
 }
 .city-star {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 2px;
+  vertical-align: -1px;
   color: #f59e0b; /* same amber as the saved-place dots */
 }
 /* A city label that sits on the selected place / my location acts as the marker */

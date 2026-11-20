@@ -17,20 +17,29 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
-export function temperatureColor(celsius: number): string {
+/** @param alpha Opacity 0-1, e.g. for the fading fill under the chart line. */
+export function temperatureColor(celsius: number, alpha = 1): string {
   const stops = TEMPERATURE_STOPS
-  if (celsius <= stops[0][0]) return stops[0][1]
-  if (celsius >= stops[stops.length - 1][0]) return stops[stops.length - 1][1]
+  const last = stops[stops.length - 1]
+  // Clamp to the scale: colder than -20° is still purple, hotter than 40° still red.
+  const t = Math.min(Math.max(celsius, stops[0][0]), last[0])
+  if (t === last[0]) return rgba(hexToRgb(last[1]), alpha)
 
-  const upper = stops.findIndex(([t]) => t >= celsius)
+  const upper = stops.findIndex(([stop]) => stop > t)
   const [t0, c0] = stops[upper - 1]
   const [t1, c1] = stops[upper]
-  const ratio = (celsius - t0) / (t1 - t0)
+  const ratio = (t - t0) / (t1 - t0)
 
   const a = hexToRgb(c0)
   const b = hexToRgb(c1)
-  const mix = a.map((v, i) => Math.round(v + (b[i] - v) * ratio))
-  return `rgb(${mix.join(',')})`
+  return rgba(
+    a.map((v, i) => Math.round(v + (b[i] - v) * ratio)),
+    alpha,
+  )
+}
+
+function rgba(rgb: number[], alpha: number): string {
+  return alpha === 1 ? `rgb(${rgb.join(',')})` : `rgba(${rgb.join(',')},${alpha})`
 }
 
 /** CSS gradient with the same stops, for the legend. */
