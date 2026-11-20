@@ -9,7 +9,7 @@ import { ApiError } from '../api/http'
  *   younger than 15 min is "fresh" and is served from cache without any request.
  * - gcTime 30 min: unused data stays in memory a while, so going back to a place is instant.
  * - refetchOnWindowFocus false: switching browser tabs should not trigger new requests.
- * - retry: retry network errors / 5xx up to 2 times, but NEVER 4xx.
+ * - retry: retry network errors, timeouts and 5xx up to 2 times, but NEVER 4xx.
  *   A 429 means "slow down"; retrying it would only make things worse.
  */
 export const queryClient = new QueryClient({

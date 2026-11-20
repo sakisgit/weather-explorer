@@ -85,7 +85,7 @@ Open-Meteo's free tier allows roughly 600 calls per minute and 10,000 per day **
 6. **Hard caps.** At most 40 cities per view and at most 12 saved places.
 7. **Few variables.** Map requests use 3 variables and compare requests use 7, so they stay under the 10-variable threshold.
 8. **The time slider makes zero requests.** Each city already has 72 hourly values in UTC, so scrubbing or playing only changes which hour is displayed.
-9. **Sensible retries.** Network errors and 5xx responses are retried up to 2 times. 4xx responses, including **429 Too Many Requests**, are never retried. Requests whose results are no longer needed (for example when the user keeps typing) are aborted.
+9. **Sensible retries and a time limit.** Every request gives up after 10 seconds (`AbortSignal.timeout`, combined with TanStack Query's own cancellation through `AbortSignal.any`), so a hanging connection never leaves a spinner forever. Network errors, timeouts and 5xx responses are retried up to 2 times. 4xx responses, including **429 Too Many Requests**, are never retried. Requests whose results are no longer needed (for example when the user keeps typing) are aborted.
 
 ### Other decisions
 
@@ -113,6 +113,7 @@ All the requirements in the brief are implemented. Known limitations:
 - °C/°F and km/h/mph toggles, persisted with the saved places.
 - Shareable URLs: put the selected place and the time slider position in the URL.
 - Renaming saved places (useful for points clicked on the map) and reordering them with drag and drop.
+- Validate API responses at runtime (e.g. with Zod). Today the response types are only a promise to TypeScript.
 - Code-split the chart components, and add a PWA/offline cache for saved places.
 - Port it to **Vue 3 / Nuxt**, as a way to learn the stack AgroApps uses.
 
