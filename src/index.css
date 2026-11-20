@@ -38,6 +38,40 @@ body {
   @apply bg-slate-900/60 text-slate-600;
 }
 
+/*
+ * Time slider track and thumb. Browsers style range inputs differently, so the parts
+ * are reset with appearance: none and drawn here. The track is filled with blue up to
+ * the thumb using --progress (set in TimeSlider.tsx), like a video player.
+ */
+.time-range {
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  cursor: pointer;
+  background: linear-gradient(to right, #0ea5e9 var(--progress, 0%), #334155 var(--progress, 0%));
+}
+.time-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid #0ea5e9;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+}
+.time-range::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid #0ea5e9;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+}
+.time-range:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 4px;
+}
+
 /* City weather labels on the map (Leaflet DivIcons are HTML strings, so they are styled here). */
 .city-marker {
   background: none;

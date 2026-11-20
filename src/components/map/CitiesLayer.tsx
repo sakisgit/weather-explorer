@@ -6,6 +6,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { useMapWeather } from '../../hooks/useMapWeather'
 import type { LatLon } from '../../api/types'
 import { usePlacesStore } from '../../store/usePlacesStore'
+import { useUiStore } from '../../store/useUiStore'
 import type { Place } from '../../types'
 import { readObstacles } from '../../utils/mapObstacles'
 import { type MapView, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
@@ -41,6 +42,9 @@ export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
   const map = useMap()
   const view = useMapView()
   const savedPlaces = usePlacesStore((s) => s.places)
+  // Collapsed card = just play + time, so the map is almost free (persisted preference).
+  const controlsOpen = useUiStore((s) => s.mapControlsOpen)
+  const setControlsOpen = useUiStore((s) => s.setMapControlsOpen)
   // Wait until the user stops panning/zooming before requesting anything.
   const settledView = useDebouncedValue(view, 400)
   const cities = useMemo(() => selectVisibleCities(settledView), [settledView])
@@ -92,8 +96,10 @@ export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
         })}
       </Pane>
 
-      <MapControlsCard loading={isFetching} error={isError}>
+      <MapControlsCard loading={isFetching} error={isError} collapsed={!controlsOpen}>
         <TimeSlider
+          compact={!controlsOpen}
+          trailing={<CollapseButton open={controlsOpen} onClick={() => setControlsOpen(!controlsOpen)} />}
           value={hourOffset}
           max={MAX_HOURS}
           onChange={(h) => {
@@ -214,7 +220,17 @@ const CityMarker = memo(function CityMarker({
  * or drag on it would also reach the map (dragging the slider would pan the map,
  * clicking would select a point). Leaflet's DomEvent helpers stop that.
  */
-function MapControlsCard({ loading, error, children }: { loading: boolean; error: boolean; children: React.ReactNode }) {
+function MapControlsCard({
+  loading,
+  error,
+  collapsed,
+  children,
+}: {
+  loading: boolean
+  error: boolean
+  collapsed: boolean
+  children: React.ReactNode
+}) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -228,20 +244,26 @@ function MapControlsCard({ loading, error, children }: { loading: boolean; error
       ref={ref}
       data-map-obstacle // the map won't place city labels under this card
       // Mobile: sits above the attribution (two lines there) and is more compact.
-      className="absolute right-14 bottom-12 left-3 z-[1000] flex flex-col gap-2 rounded-lg bg-slate-900/90 p-2.5 text-[11px] text-slate-300 shadow-lg backdrop-blur sm:right-auto sm:bottom-6 sm:w-80 sm:gap-3 sm:p-3"
+      // Collapsed: only as wide as its content.
+      className={`absolute bottom-12 left-3 z-[1000] flex flex-col gap-2 rounded-lg bg-slate-900/90 p-2.5 text-[11px] text-slate-300 shadow-lg backdrop-blur sm:bottom-6 sm:gap-3 sm:p-3 ${
+        collapsed ? '' : 'right-14 sm:right-auto sm:w-80'
+      }`}
     >
       {children}
 
-      {/* On phones this block only takes space while there is a status to show */}
-      <div className={loading || error ? '' : 'hidden sm:block'}>
+      {/* The legend: on phones (or when collapsed) this block only takes space while there is a status to show */}
+      <div className={loading || error ? '' : collapsed ? 'hidden' : 'hidden sm:block'}>
         <div className="flex justify-between sm:mb-1">
           {/* The legend is hidden on small screens to leave more of the map visible */}
-          <span className="hidden sm:inline">Temperature</span>
+          <span className={collapsed ? 'hidden' : 'hidden sm:inline'}>Temperature</span>
           {loading && <span className="text-sky-400">Updating…</span>}
           {error && !loading && <span className="text-amber-400">Map data unavailable</span>}
         </div>
-        <div className="hidden h-2 rounded-full sm:block" style={{ background: temperatureGradientCss() }} />
-        <div className="mt-0.5 hidden justify-between text-slate-400 sm:flex">
+        <div
+          className={`hidden h-2 rounded-full ${collapsed ? '' : 'sm:block'}`}
+          style={{ background: temperatureGradientCss() }}
+        />
+        <div className={`mt-0.5 hidden justify-between text-slate-400 ${collapsed ? '' : 'sm:flex'}`}>
           <span>-20°</span>
           <span>0°</span>
           <span>20°</span>
@@ -249,5 +271,32 @@ function MapControlsCard({ loading, error, children }: { loading: boolean; error
         </div>
       </div>
     </div>
+  )
+}
+
+/** Collapses the card to just play + time, or expands it again. The chevron points the way it will move. */
+function CollapseButton({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      aria-label={open ? 'Collapse time controls' : 'Expand time controls'}
+      title={open ? 'Collapse' : 'Expand'}
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-800 hover:text-sky-400"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : '-rotate-90'}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="m9 6 6 6-6 6" />
+      </svg>
+    </button>
   )
 }
