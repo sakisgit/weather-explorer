@@ -6,6 +6,7 @@ import {
   type ChartData,
   type ChartOptions,
   Filler,
+  Legend,
   LineController,
   LineElement,
   LinearScale,
@@ -30,6 +31,7 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   Filler,
+  Legend,
   Tooltip,
 )
 
@@ -91,6 +93,11 @@ const options: ChartOptions<'bar' | 'line'> = {
   // Hovering anywhere in a column shows both values for that hour.
   interaction: { mode: 'index', intersect: false },
   plugins: {
+    // Chart.js registration is GLOBAL: once any chart registers the Legend plugin
+    // (the compare chart does), every chart shows a legend. Style it explicitly here.
+    legend: {
+      labels: { color: '#cbd5e1', boxWidth: 10, boxHeight: 10, font: { size: 11 } },
+    },
     tooltip: {
       callbacks: {
         label: (ctx) =>

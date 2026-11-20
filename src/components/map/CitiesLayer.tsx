@@ -128,12 +128,14 @@ const CityMarker = memo(function CityMarker({ city, temperature, weatherCode, is
         className: 'city-marker', // replaces Leaflet's default white box styling
         iconSize: [120, 52],
         iconAnchor: [60, 18], // the icon (not the name) sits on the city's coordinate
-        html: `<div class="city-label" style="--temp-color:${color}">
+        // The hover text lives in the HTML: it is rebuilt with the icon, so it always matches
+        // the displayed hour (Leaflet's `title` option is only read once, when the marker is created).
+        html: `<div class="city-label" style="--temp-color:${color}" title="${city.name}: ${info.label}, ${rounded}°C">
                  <div class="city-row"><span class="city-icon" aria-hidden="true">${info.icon}</span><span class="city-temp">${rounded}°</span></div>
                  <div class="city-name">${city.name}</div>
                </div>`,
       }),
-    [color, info.icon, rounded, city.name],
+    [color, info.icon, info.label, rounded, city.name],
   )
 
   return (
@@ -141,7 +143,7 @@ const CityMarker = memo(function CityMarker({ city, temperature, weatherCode, is
       position={[city.lat, city.displayLon]}
       icon={icon}
       pane="cities"
-      title={`${city.name}: ${info.label}, ${rounded}°C`}
+      alt={city.name}
       eventHandlers={{ click: () => onSelect(placeFromCity(city)) }}
     />
   )
