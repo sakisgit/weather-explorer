@@ -110,32 +110,48 @@ body {
   color: #f59e0b; /* same amber as the saved-place dots */
 }
 /* A city label that sits on the selected place / my location acts as the marker */
-.city-label.is-highlighted {
+/*
+ * The label as a card: on the light/color basemaps (white text needs a dark background)
+ * and, on any basemap, for a label that sits on the selected place / my location.
+ * Nearly opaque, so the basemap's own place names don't show through it.
+ */
+.city-label.is-highlighted,
+.basemap-light .city-label,
+.basemap-color .city-label {
   width: fit-content;
-  margin: -3px auto 0; /* cancels the padding, so the label doesn't move */
-  padding: 3px 6px;
-  border-radius: 8px;
-  background: rgb(2 6 23 / 0.85);
+  margin: -4px auto 0; /* cancels the top padding, so the label stays on its coordinate */
+  padding: 4px 8px 5px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 10px;
+  background: rgb(15 23 42 / 0.92); /* slate-900 */
+  box-shadow: 0 2px 8px rgb(2 6 23 / 0.35);
+  text-shadow: none;
+}
+/* Inside a card the icon needs no negative left margin (it would touch the edge) */
+.city-label.is-highlighted .city-icon,
+.basemap-light .city-icon,
+.basemap-color .city-icon {
+  margin-left: -2px;
+  filter: none;
+}
+/* Fully opaque when it covers the selected / my-location dot, which must not show through */
+.city-label.is-highlighted {
+  background: #0f172a;
 }
 .city-label.is-selected {
-  box-shadow: 0 0 0 2px #0ea5e9; /* same blue as the selected dot */
+  box-shadow:
+    0 0 0 2px #0ea5e9,
+    0 2px 8px rgb(2 6 23 / 0.35); /* same blue as the selected dot */
 }
 .city-label.is-me {
-  box-shadow: 0 0 0 2px #22c55e; /* same green as the my-location dot */
+  box-shadow:
+    0 0 0 2px #22c55e,
+    0 2px 8px rgb(2 6 23 / 0.35); /* same green as the my-location dot */
 }
 /*
  * On the light and color basemaps the white names would vanish, so every label gets
  * a small dark pill (like the highlighted ones), matching the dark UI around the map.
  */
-.basemap-light .city-label,
-.basemap-color .city-label {
-  width: fit-content;
-  margin: -3px auto 0; /* cancels the padding, so the label stays on its coordinate */
-  padding: 3px 6px;
-  border-radius: 8px;
-  background: rgb(2 6 23 / 0.72);
-  text-shadow: none;
-}
 .basemap-light .leaflet-container {
   @apply bg-zinc-200; /* behind tiles while they load */
 }
