@@ -2,7 +2,7 @@
 
 Explore the weather anywhere in the world on an interactive map, dive into the places that interest you, build your own collection of places and compare them side by side.
 
-**Live demo:** _coming soon (Vercel link)_
+**Live demo:** https://weather-explorer-smoky.vercel.app
 
 Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.com/) Forecast and Geocoding APIs. **No API keys are required.**
 
