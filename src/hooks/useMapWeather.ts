@@ -1,35 +1,33 @@
 import { type QueryClient, keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchGridForecast } from '../api/openMeteo'
 import type { GridPointForecast, LatLon } from '../api/types'
-import type { GridPoint } from '../utils/grid'
 
 const FRESH_FOR_MS = 15 * 60 * 1000
 const MAX_PER_REQUEST = 50 // keeps the URL short
 
-const pointKey = (p: LatLon) => ['grid-point', p.lat, p.lon] as const
+const pointKey = (p: LatLon) => ['map-point', p.lat, p.lon] as const
 
 /**
- * Weather for every point of the visible grid.
+ * Hourly weather for every place shown on the map overview.
  *
- * Per-point caching: each point's forecast is stored under its OWN cache key.
- * When the map moves we only request the points we don't already have (fresh),
- * all of them in a single batched request. Panning one column to the right
- * therefore costs one column of points, not the whole screen again.
+ * Per-point caching: each place's forecast is stored under its OWN cache key.
+ * When the map moves we only request the places we don't already have (fresh),
+ * all of them in a single batched request. Panning so that 3 new cities appear
+ * costs 3 points, not every city on screen again.
  */
-export function useWeatherGrid(points: GridPoint[]) {
+export function useMapWeather(points: LatLon[]) {
   const queryClient = useQueryClient()
-  const apiPoints = points.map((p) => p.api)
 
   return useQuery({
-    queryKey: ['grid', apiPoints.map((p) => `${p.lat},${p.lon}`).join('|')],
-    queryFn: ({ signal }) => loadGrid(apiPoints, queryClient, signal),
+    queryKey: ['map-weather', points.map((p) => `${p.lat},${p.lon}`).join('|')],
+    queryFn: ({ signal }) => loadPoints(points, queryClient, signal),
     enabled: points.length > 0,
     // Keep showing the old markers while the new view loads (no flicker when panning).
     placeholderData: keepPreviousData,
   })
 }
 
-async function loadGrid(points: LatLon[], queryClient: QueryClient, signal: AbortSignal) {
+async function loadPoints(points: LatLon[], queryClient: QueryClient, signal: AbortSignal) {
   const isFresh = (p: LatLon) => {
     const state = queryClient.getQueryState(pointKey(p))
     return state?.data !== undefined && Date.now() - state.dataUpdatedAt < FRESH_FOR_MS

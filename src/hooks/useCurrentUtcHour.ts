@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { currentUtcHourSlot } from '../utils/grid'
+import { currentUtcHourSlot } from '../utils/time'
 
 /**
  * The current UTC hour slot ("2026-11-20T09:00"), kept in state.

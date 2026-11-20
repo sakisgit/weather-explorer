@@ -16,16 +16,34 @@ body {
   @apply bg-slate-950 font-sans;
 }
 
-/* Weather grid markers (Leaflet DivIcons are plain HTML strings, so they are styled here). */
-.grid-marker {
+/* City weather labels on the map (Leaflet DivIcons are HTML strings, so they are styled here). */
+.city-marker {
   background: none;
   border: none;
 }
-.grid-pill {
-  @apply flex h-full w-full cursor-pointer items-center justify-center gap-1 rounded-full bg-slate-900/85 text-xs font-semibold shadow-md;
-  border: 1.5px solid var(--temp-color);
+.city-label {
+  @apply flex cursor-pointer flex-col items-center leading-none;
+  /* Dark halo so the text stays readable on any part of the basemap */
+  text-shadow:
+    0 0 3px #020617,
+    0 0 6px #020617;
+}
+.city-row {
+  @apply flex items-center gap-1;
+}
+.city-icon {
+  font-size: 26px;
+  /* Force the color emoji font, otherwise some browsers draw monochrome symbols */
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+.city-temp {
+  @apply text-lg font-bold;
   color: var(--temp-color);
 }
-.grid-pill:hover {
-  @apply bg-slate-800;
+.city-name {
+  @apply mt-0.5 text-[11px] font-medium text-slate-100;
+}
+.city-label:hover .city-name {
+  @apply underline;
 }
