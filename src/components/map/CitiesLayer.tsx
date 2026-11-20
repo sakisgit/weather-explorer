@@ -116,7 +116,7 @@ export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
         })}
       </Pane>
 
-      <Timeline collapsed={!controlsOpen}>
+      <Timeline collapsed={!controlsOpen} progress={hourOffset / MAX_HOURS}>
         <TimeSlider
           compact={!controlsOpen}
           dayTicks={dayTicks}
@@ -251,7 +251,16 @@ const CityMarker = memo(function CityMarker({
  * or drag on it would also reach the map (dragging the slider would pan the map,
  * clicking would select a point). Leaflet's DomEvent helpers stop that.
  */
-function Timeline({ collapsed, children }: { collapsed: boolean; children: React.ReactNode }) {
+function Timeline({
+  collapsed,
+  progress,
+  children,
+}: {
+  collapsed: boolean
+  /** 0..1, how far into the 48 hours: drawn as a thin line when the slider is hidden. */
+  progress: number
+  children: React.ReactNode
+}) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -268,10 +277,16 @@ function Timeline({ collapsed, children }: { collapsed: boolean; children: React
       // two lines there. Wide map (@2xl = 42rem+, a container query on the map): centered, at most 36rem wide,
       // leaving room for the zoom buttons. Collapsed: only as wide as its content.
       className={`absolute bottom-12 left-3 z-[1000] rounded-xl border border-slate-700/60 bg-slate-900/90 py-2 pr-2 pl-2 text-slate-300 shadow-lg backdrop-blur @2xl:bottom-6 @2xl:left-1/2 @2xl:-translate-x-1/2 @2xl:pr-3 ${
-        collapsed ? '' : 'right-14 @2xl:right-auto @2xl:w-[min(36rem,calc(100%-9rem))]'
+        collapsed ? 'overflow-hidden' : 'right-14 @2xl:right-auto @2xl:w-[min(36rem,calc(100%-9rem))]'
       }`}
     >
       {children}
+      {/* Collapsed: a thin progress line along the bottom edge (like a music mini-player) */}
+      {collapsed && (
+        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-slate-700/60" aria-hidden>
+          <div className="h-full bg-sky-400 transition-[width] duration-300" style={{ width: `${progress * 100}%` }} />
+        </div>
+      )}
     </div>
   )
 }

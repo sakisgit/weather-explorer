@@ -16,7 +16,7 @@ Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.co
 - **Current location.** A "My location" button. Returning users who already granted permission are located automatically.
 - **My places.** Save up to 12 places (persisted in `localStorage`) and compare them: current weather, today's high/low and rain chance, sorting by temperature, and a 7-day high-temperature chart.
 - **Map styles.** Switch the basemap between Dark (the default, so the weather stands out), Light and Color (topographic). On the lighter maps every city label gets a dark card so it stays readable.
-- **Collapsible panel.** An arrow collapses the side panel (or the bottom panel on phones) to give the map the whole screen. Picking a place opens it again. The panel state and the map style are remembered between visits.
+- **Collapsible panel.** An arrow collapses the side panel (or the bottom panel on phones) to give the map the whole screen; collapsed, it keeps an icon rail for the two tabs (with a badge for the saved places count). Picking a place opens it again. The panel state and the map style are remembered between visits.
 - Responsive layout: map and side panel on desktop, map above the panel on mobile. On a phone the map controls get more compact, and a selected place is centred in the part of the map not covered by the search box or the time slider.
 
 ## 1. Installation and setup

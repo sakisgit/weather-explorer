@@ -3,7 +3,7 @@ import type { LatLon } from './api/types'
 import { WeatherMap } from './components/map/WeatherMap'
 import { PlaceDetails } from './components/panels/PlaceDetails'
 import { SavedPlaces } from './components/panels/SavedPlaces'
-import { ChevronRight, MapPin, Star, X } from 'lucide-react'
+import { ChevronRight, CloudSun, MapPin, Star, X } from 'lucide-react'
 import { BasemapSwitcher } from './components/ui/BasemapSwitcher'
 import { LocateButton } from './components/ui/LocateButton'
 import { SearchBox } from './components/ui/SearchBox'
@@ -82,6 +82,43 @@ function App() {
             <PanelToggle open={panelOpen} onClick={() => setPanelOpen(!panelOpen)} />
           </div>
 
+          {/*
+            Collapsed on desktop: the tabs become an icon rail (like VS Code or Google Maps),
+            so each one is a click away. The panel opens straight on that tab.
+          */}
+          {!panelOpen && (
+            <nav
+              aria-label="Panel"
+              className="mt-4 hidden flex-col items-center gap-2 border-t border-slate-800 pt-4 md:flex"
+            >
+              <RailButton
+                label="Details"
+                active={tab === 'details'}
+                onClick={() => {
+                  setTab('details')
+                  setPanelOpen(true)
+                }}
+              >
+                <CloudSun className="h-5 w-5" aria-hidden />
+              </RailButton>
+              <RailButton
+                label={`My places${savedCount > 0 ? ` (${savedCount})` : ''}`}
+                active={tab === 'places'}
+                onClick={() => {
+                  setTab('places')
+                  setPanelOpen(true)
+                }}
+              >
+                <Star className="h-5 w-5" aria-hidden />
+                {savedCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 rounded-full bg-amber-500 px-1 text-[10px] leading-4 font-semibold text-slate-950">
+                    {savedCount}
+                  </span>
+                )}
+              </RailButton>
+            </nav>
+          )}
+
           {panelOpen && (
             <nav role="tablist" aria-label="Panel" className="mt-3 flex gap-1">
               <TabButton active={tab === 'details'} onClick={() => setTab('details')}>
@@ -152,6 +189,33 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${
         active ? 'border-sky-500 text-slate-100' : 'border-transparent text-slate-400 hover:text-slate-200'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** An icon button of the collapsed panel's rail. The label is the tooltip and the screen-reader name. */
+function RailButton({
+  label,
+  active,
+  onClick,
+  children,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+        active ? 'bg-sky-500/15 text-sky-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
       }`}
     >
       {children}
