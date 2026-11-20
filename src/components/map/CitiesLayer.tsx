@@ -4,6 +4,8 @@ import { Marker, Pane, useMap, useMapEvents } from 'react-leaflet'
 import { useCurrentUtcHour } from '../../hooks/useCurrentUtcHour'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { useMapWeather } from '../../hooks/useMapWeather'
+import type { LatLon } from '../../api/types'
+import { usePlacesStore } from '../../store/usePlacesStore'
 import type { Place } from '../../types'
 import { type MapView, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
 import { temperatureColor, temperatureGradientCss } from '../../utils/temperatureColor'
@@ -12,8 +14,18 @@ import { getWeatherInfo } from '../../utils/weatherCodes'
 import { TimeSlider } from '../ui/TimeSlider'
 
 interface Props {
+  selected: Place | null
+  myLocation: LatLon | null
   onSelect: (place: Place) => void
 }
+
+type Highlight = 'selected' | 'me' | null
+
+// The label's box around its coordinate, in pixels (see iconAnchor below).
+// A point inside this box would be hidden by the label.
+const LABEL_HALF_WIDTH = 32
+const LABEL_ABOVE = 18
+const LABEL_BELOW = 34
 
 const MAX_HOURS = 48
 const PLAY_STEP_MS = 600 // one forecast hour every 0.6 s: a 48 h loop takes ~30 s
@@ -24,8 +36,10 @@ const PLAY_STEP_MS = 600 // one forecast hour every 0.6 s: a 48 h loop takes ~30
  * Flow: map moves -> (debounce 400 ms) -> pick visible cities for this zoom ->
  * fetch only the cities not in cache (one batched request) -> draw markers.
  */
-export function CitiesLayer({ onSelect }: Props) {
+export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
+  const map = useMap()
   const view = useMapView()
+  const savedPlaces = usePlacesStore((s) => s.places)
   // Wait until the user stops panning/zooming before requesting anything.
   const settledView = useDebouncedValue(view, 400)
   const cities = useMemo(() => selectVisibleCities(settledView), [settledView])
@@ -50,14 +64,18 @@ export function CitiesLayer({ onSelect }: Props) {
   return (
     <>
       {/*
-        Own pane BELOW Leaflet's overlay pane (z-index 400), so the selected-place
-        and my-location dots (SVG, in the overlay pane) are always drawn on top.
+        Own pane ABOVE the "points" pane (selected / my-location / saved dots, z-index 340).
+        A dot that falls under a label would be hidden, so instead that label is
+        highlighted (see `highlight` and `saved`): the label "becomes" the marker.
       */}
       <Pane name="cities" style={{ zIndex: 350 }}>
         {cities.map((city) => {
           const forecast = data?.get(`${city.api.lat},${city.api.lon}`)
           const i = forecast ? forecast.hourly.time.indexOf(slot) : -1
           if (!forecast || i === -1) return null
+          const covers = (p: LatLon) => labelCoversPoint(map, view.zoom, city, p)
+          const highlight: Highlight =
+            selected && covers(selected) ? 'selected' : myLocation && covers(myLocation) ? 'me' : null
           return (
             <CityMarker
               key={`${city.name}-${city.displayLon}`}
@@ -65,6 +83,8 @@ export function CitiesLayer({ onSelect }: Props) {
               temperature={forecast.hourly.temperature_2m[i]}
               weatherCode={forecast.hourly.weather_code[i]}
               isDay={forecast.hourly.is_day[i] === 1}
+              highlight={highlight}
+              saved={savedPlaces.some(covers)}
               onSelect={onSelect}
             />
           )
@@ -104,11 +124,27 @@ function useMapView(): MapView {
   return view
 }
 
+/**
+ * Would this city's label (drawn at the current zoom) cover the given point?
+ * Measured in screen pixels, so it works the same at every zoom level.
+ */
+function labelCoversPoint(map: L.Map, zoom: number, city: VisibleCity, point: LatLon): boolean {
+  // Bring the point onto the same copy of the world as the label (±360°).
+  const lon = point.lon + 360 * Math.round((city.displayLon - point.lon) / 360)
+  const a = map.project([city.lat, city.displayLon], zoom)
+  const b = map.project([point.lat, lon], zoom)
+  const dx = b.x - a.x
+  const dy = b.y - a.y // positive = below the city coordinate
+  return Math.abs(dx) <= LABEL_HALF_WIDTH && dy >= -LABEL_ABOVE && dy <= LABEL_BELOW
+}
+
 interface MarkerProps {
   city: VisibleCity
   temperature: number
   weatherCode: number
   isDay: boolean
+  highlight: Highlight
+  saved: boolean
   onSelect: (place: Place) => void
 }
 
@@ -117,10 +153,19 @@ interface MarkerProps {
  * so the basemap stays visible. `memo` skips re-rendering markers whose values
  * didn't change, and the DivIcon is only rebuilt when the displayed values change.
  */
-const CityMarker = memo(function CityMarker({ city, temperature, weatherCode, isDay, onSelect }: MarkerProps) {
+const CityMarker = memo(function CityMarker({
+  city,
+  temperature,
+  weatherCode,
+  isDay,
+  highlight,
+  saved,
+  onSelect,
+}: MarkerProps) {
   const info = getWeatherInfo(weatherCode, isDay)
   const rounded = Math.round(temperature)
   const color = temperatureColor(temperature)
+  const labelClass = highlight ? `city-label is-highlighted is-${highlight}` : 'city-label'
 
   const icon = useMemo(
     () =>
@@ -130,12 +175,12 @@ const CityMarker = memo(function CityMarker({ city, temperature, weatherCode, is
         iconAnchor: [60, 18], // the icon (not the name) sits on the city's coordinate
         // The hover text lives in the HTML: it is rebuilt with the icon, so it always matches
         // the displayed hour (Leaflet's `title` option is only read once, when the marker is created).
-        html: `<div class="city-label" style="--temp-color:${color}" title="${city.name}: ${info.label}, ${rounded}°C">
+        html: `<div class="${labelClass}" style="--temp-color:${color}" title="${city.name}: ${info.label}, ${rounded}°C">
                  <div class="city-row"><span class="city-icon" aria-hidden="true">${info.icon}</span><span class="city-temp">${rounded}°</span></div>
-                 <div class="city-name">${city.name}</div>
+                 <div class="city-name">${saved ? '<span class="city-star">★</span> ' : ''}${city.name}</div>
                </div>`,
       }),
-    [color, info.icon, info.label, rounded, city.name],
+    [color, info.icon, info.label, rounded, city.name, labelClass, saved],
   )
 
   return (

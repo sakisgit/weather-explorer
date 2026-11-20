@@ -44,6 +44,23 @@ body {
 .city-name {
   @apply mt-0.5 text-[11px] font-medium text-slate-100;
 }
+.city-star {
+  color: #f59e0b; /* same amber as the saved-place dots */
+}
+/* A city label that sits on the selected place / my location acts as the marker */
+.city-label.is-highlighted {
+  width: fit-content;
+  margin: -3px auto 0; /* cancels the padding, so the label doesn't move */
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: rgb(2 6 23 / 0.85);
+}
+.city-label.is-selected {
+  box-shadow: 0 0 0 2px #0ea5e9; /* same blue as the selected dot */
+}
+.city-label.is-me {
+  box-shadow: 0 0 0 2px #22c55e; /* same green as the my-location dot */
+}
 .city-label:hover .city-name {
   @apply underline;
 }

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { CircleMarker, MapContainer, TileLayer, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
+import { CircleMarker, MapContainer, Pane, TileLayer, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLon } from '../../api/types'
 import type { Place } from '../../types'
 import { usePlacesStore } from '../../store/usePlacesStore'
@@ -47,43 +47,48 @@ export function WeatherMap({ selected, myLocation, onSelect }: Props) {
       />
       <ZoomControl position="bottomright" />
 
-      <CitiesLayer onSelect={onSelect} />
+      <CitiesLayer selected={selected} myLocation={myLocation} onSelect={onSelect} />
       <MapClickHandler onSelect={onSelect} />
-      <SavedPlacesMarkers onSelect={onSelect} />
       <FlyToSelected selected={selected} />
 
       {/*
+        The dots live in their own pane just BELOW the city labels (z-index 350).
+        Where a dot sits under a label, CitiesLayer highlights that label instead,
+        so the label's weather is never covered by a dot.
         CircleMarker is drawn as SVG, so it avoids Leaflet's well-known
         "missing default marker icon" problem with bundlers like Vite.
       */}
-      {/* The user's position stays visible even after selecting other places. */}
-      {myLocation && (
-        <CircleMarker
-          center={[myLocation.lat, myLocation.lon]}
-          radius={6}
-          pathOptions={{ color: '#fff', weight: 2, fillColor: '#22c55e', fillOpacity: 1 }}
-          // Don't let the click also reach the map (which would select raw coordinates)
-          bubblingMouseEvents={false}
-          eventHandlers={{ click: () => onSelect(placeFromCoords(myLocation.lat, myLocation.lon, 'My location')) }}
-        >
-          <Tooltip direction="top" offset={[0, -6]}>
-            You are here
-          </Tooltip>
-        </CircleMarker>
-      )}
+      <Pane name="points" style={{ zIndex: 340 }}>
+        <SavedPlacesMarkers onSelect={onSelect} />
+        {/* The user's position stays visible even after selecting other places. */}
+        {myLocation && (
+          <CircleMarker
+            center={[myLocation.lat, myLocation.lon]}
+            radius={6}
+            pathOptions={{ color: '#fff', weight: 2, fillColor: '#22c55e', fillOpacity: 1 }}
+            // Don't let the click also reach the map (which would select raw coordinates)
+            bubblingMouseEvents={false}
+            eventHandlers={{ click: () => onSelect(placeFromCoords(myLocation.lat, myLocation.lon, 'My location')) }}
+          >
+            <Tooltip direction="top" offset={[0, -6]}>
+              You are here
+            </Tooltip>
+          </CircleMarker>
+        )}
 
-      {selected && (
-        <CircleMarker
-          center={[selected.lat, selected.lon]}
-          radius={9}
-          pathOptions={{ color: '#fff', weight: 2, fillColor: '#0ea5e9', fillOpacity: 1 }}
-          bubblingMouseEvents={false}
-        >
-          <Tooltip direction="top" offset={[0, -8]}>
-            {selected.name}
-          </Tooltip>
-        </CircleMarker>
-      )}
+        {selected && (
+          <CircleMarker
+            center={[selected.lat, selected.lon]}
+            radius={9}
+            pathOptions={{ color: '#fff', weight: 2, fillColor: '#0ea5e9', fillOpacity: 1 }}
+            bubblingMouseEvents={false}
+          >
+            <Tooltip direction="top" offset={[0, -8]}>
+              {selected.name}
+            </Tooltip>
+          </CircleMarker>
+        )}
+      </Pane>
     </MapContainer>
   )
 }
