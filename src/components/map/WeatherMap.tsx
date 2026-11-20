@@ -76,14 +76,17 @@ function MapClickHandler({ onSelect }: { onSelect: (place: Place) => void }) {
 /** Animates the map to the selected place whenever it changes. */
 function FlyToSelected({ selected }: { selected: Place | null }) {
   const map = useMap()
+  // Depend on the coordinates (plain numbers), not the object: a new object
+  // for the same place must not trigger another fly animation.
+  const lat = selected?.lat
+  const lon = selected?.lon
 
   useEffect(() => {
-    if (!selected) return
+    if (lat === undefined || lon === undefined) return
     // Never zoom OUT when flying (e.g. clicking the map while zoomed in).
     const zoom = Math.max(map.getZoom(), 8)
-    map.flyTo([selected.lat, selected.lon], zoom, { duration: 1.2 })
-    // Depend on the id, not the object: a new object for the same place shouldn't re-fly.
-  }, [map, selected?.id])
+    map.flyTo([lat, lon], zoom, { duration: 1.2 })
+  }, [map, lat, lon])
 
   return null
 }
