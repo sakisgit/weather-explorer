@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { WeatherMap } from './components/map/WeatherMap'
+import { PlaceDetails } from './components/panels/PlaceDetails'
 import { SearchBox } from './components/ui/SearchBox'
 import type { Place } from './types'
 
@@ -25,11 +26,7 @@ function App() {
 
         <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-400">
           {selected ? (
-            <div>
-              <div className="text-base text-slate-100">{selected.name}</div>
-              <div>{selected.subtitle}</div>
-              <div className="mt-2 text-xs">Weather details come in Step 3.</div>
-            </div>
+            <PlaceDetails place={selected} />
           ) : (
             'Search for a city or click anywhere on the map.'
           )}
