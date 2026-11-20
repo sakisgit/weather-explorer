@@ -29,12 +29,15 @@ export function WeatherMap({ selected, onSelect }: Props) {
       zoomControl={false} // re-added bottom-right so it doesn't collide with the search box
       className="h-full w-full"
     >
-      {/* CARTO dark basemap: free, no API key, needs attribution. Dark fits the TV-forecast look. */}
+      {/*
+        Esri "Dark Gray Canvas" basemap: no API key needed (CARTO now requires one),
+        attribution required. A dark, muted basemap lets the weather data stand out.
+        Note Esri's tile URL order is {z}/{y}/{x}, not the usual {z}/{x}/{y}.
+      */}
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        subdomains="abcd"
-        maxZoom={19}
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+        attribution="Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors"
+        maxZoom={16}
       />
       <ZoomControl position="bottomright" />
 
