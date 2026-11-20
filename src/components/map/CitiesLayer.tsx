@@ -7,7 +7,8 @@ import { useMapWeather } from '../../hooks/useMapWeather'
 import type { LatLon } from '../../api/types'
 import { usePlacesStore } from '../../store/usePlacesStore'
 import type { Place } from '../../types'
-import { type MapView, type Rect, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
+import { readObstacles } from '../../utils/mapObstacles'
+import { type MapView, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
 import { temperatureColor, temperatureGradientCss } from '../../utils/temperatureColor'
 import { addHoursToSlot, formatSlotForUser } from '../../utils/time'
 import { getWeatherInfo } from '../../utils/weatherCodes'
@@ -150,18 +151,6 @@ function labelCoversPoint(map: L.Map, zoom: number, city: VisibleCity, point: La
   return Math.abs(dx) <= LABEL_HALF_WIDTH && dy >= -LABEL_ABOVE && dy <= LABEL_BELOW
 }
 
-/**
- * Screen rectangles of the UI floating over the map (elements marked with
- * `data-map-obstacle`), relative to the map's top-left corner.
- */
-function readObstacles(container: HTMLElement): Rect[] {
-  const map = container.getBoundingClientRect()
-  return [...document.querySelectorAll('[data-map-obstacle]')].map((el) => {
-    const r = el.getBoundingClientRect()
-    return { left: r.left - map.left, top: r.top - map.top, right: r.right - map.left, bottom: r.bottom - map.top }
-  })
-}
-
 interface MarkerProps {
   city: VisibleCity
   temperature: number
@@ -238,18 +227,21 @@ function MapControlsCard({ loading, error, children }: { loading: boolean; error
     <div
       ref={ref}
       data-map-obstacle // the map won't place city labels under this card
-      className="absolute right-14 bottom-6 left-3 z-[1000] space-y-3 rounded-lg bg-slate-900/90 p-3 text-[11px] text-slate-300 shadow-lg backdrop-blur sm:right-auto sm:w-80"
+      // Mobile: sits above the attribution (two lines there) and is more compact.
+      className="absolute right-14 bottom-12 left-3 z-[1000] flex flex-col gap-2 rounded-lg bg-slate-900/90 p-2.5 text-[11px] text-slate-300 shadow-lg backdrop-blur sm:right-auto sm:bottom-6 sm:w-80 sm:gap-3 sm:p-3"
     >
       {children}
 
-      <div>
-        <div className="mb-1 flex justify-between">
-          <span>Temperature</span>
+      {/* On phones this block only takes space while there is a status to show */}
+      <div className={loading || error ? '' : 'hidden sm:block'}>
+        <div className="flex justify-between sm:mb-1">
+          {/* The legend is hidden on small screens to leave more of the map visible */}
+          <span className="hidden sm:inline">Temperature</span>
           {loading && <span className="text-sky-400">Updating…</span>}
           {error && !loading && <span className="text-amber-400">Map data unavailable</span>}
         </div>
-        <div className="h-2 rounded-full" style={{ background: temperatureGradientCss() }} />
-        <div className="mt-0.5 flex justify-between text-slate-400">
+        <div className="hidden h-2 rounded-full sm:block" style={{ background: temperatureGradientCss() }} />
+        <div className="mt-0.5 hidden justify-between text-slate-400 sm:flex">
           <span>-20°</span>
           <span>0°</span>
           <span>20°</span>

@@ -2,15 +2,8 @@ import L from 'leaflet'
 import type { LatLon } from '../api/types'
 import { CITIES, type City } from '../data/cities'
 import type { Place } from '../types'
+import type { Rect } from './mapObstacles'
 import { roundLatLon } from './coords'
-
-/** A rectangle in screen pixels, relative to the map's top-left corner. */
-export interface Rect {
-  left: number
-  top: number
-  right: number
-  bottom: number
-}
 
 /** What the map currently shows. */
 export interface MapView {

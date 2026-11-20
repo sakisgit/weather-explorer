@@ -3,6 +3,7 @@ import { CircleMarker, MapContainer, Pane, TileLayer, Tooltip, ZoomControl, useM
 import type { LatLon } from '../../api/types'
 import type { Place } from '../../types'
 import { usePlacesStore } from '../../store/usePlacesStore'
+import { freeCenterOffsetY, readObstacles } from '../../utils/mapObstacles'
 import { placeFromCoords } from '../../utils/places'
 import { CitiesLayer } from './CitiesLayer'
 
@@ -115,7 +116,12 @@ function FlyToSelected({ selected }: { selected: Place | null }) {
     if (lat === undefined || lon === undefined) return
     // Never zoom OUT when flying (e.g. clicking the map while zoomed in).
     const zoom = Math.max(map.getZoom(), 8)
-    map.flyTo([lat, lon], zoom, { duration: 1.2 })
+    // On a phone the search box and the slider card cover the map's centre, so aim
+    // a bit lower: the place then lands in the middle of the space that is free.
+    const size = map.getSize()
+    const dy = freeCenterOffsetY(size.x, size.y, readObstacles(map.getContainer()))
+    const center = map.unproject(map.project([lat, lon], zoom).add([0, dy]), zoom)
+    map.flyTo(center, zoom, { duration: 1.2 })
   }, [map, lat, lon])
 
   return null

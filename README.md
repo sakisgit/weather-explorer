@@ -15,7 +15,7 @@ Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.co
 - **Click anywhere on the map** to get the forecast for that point.
 - **Current location.** A "My location" button. Returning users who already granted permission are located automatically.
 - **My places.** Save up to 12 places (persisted in `localStorage`) and compare them: current weather, today's high/low and rain chance, sorting by temperature, and a 7-day high-temperature chart.
-- Responsive layout: map and side panel on desktop, map above the panel on mobile.
+- Responsive layout: map and side panel on desktop, map above the panel on mobile. On a phone the map controls get more compact, and a selected place is centred in the part of the map not covered by the search box or the time slider.
 
 ## 1. Installation and setup
 
@@ -89,7 +89,7 @@ Open-Meteo's free tier allows roughly 600 calls per minute and 10,000 per day **
 
 ### Other decisions
 
-- **Cities instead of a regular grid.** My first version drew a regular grid of points. It looked mechanical, hid the basemap and showed nameless points in the sea, so I replaced it with a curated list of about 190 cities in three importance tiers. Visible cities are picked by zoom level, and a collision check in screen pixels (Web Mercator, `L.CRS.EPSG3857`) makes sure the more important city wins when labels would overlap. A static list costs no requests and gives the map real names.
+- **Cities instead of a regular grid.** My first version drew a regular grid of points. It looked mechanical, hid the basemap and showed nameless points in the sea, so I replaced it with a curated list of about 190 cities in three importance tiers. Visible cities are picked by zoom level, and a collision check in screen pixels (Web Mercator, `L.CRS.EPSG3857`) makes sure the more important city wins when labels would overlap. Labels are also kept out from under the floating UI (search box, time slider): those elements are marked with `data-map-obstacle`, and their screen rectangles are read from the DOM, so this keeps working when the layout changes on mobile. Cities that would be hidden are not requested either. A static list costs no requests and gives the map real names.
 - **Time zones.** Place details use `timezone=auto`, so times are local to the place (Tokyo shows Tokyo time). Times are read from the string instead of `new Date()`, so they are not shifted into the viewer's time zone. The map overview uses UTC, so all cities share one clock and the slider shows the same moment everywhere; its label is shown in the viewer's own time zone.
 - **Geolocation.** The app never shows the permission prompt on page load, because unprompted requests tend to get denied permanently. It uses the Permissions API to locate automatically only if permission was already granted; otherwise it waits for a click. Errors (denied, unavailable, timeout) show friendly messages with alternatives.
 - **Basemap.** Esri "World Dark Gray" tiles: no API key, and a muted dark style that lets the weather data stand out. CARTO dark tiles were my first choice, but they now require an API key, and a key in a public, client-side app would be visible to everyone.

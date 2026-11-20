@@ -50,7 +50,7 @@ function App() {
       <aside className="order-2 flex h-1/2 w-full flex-col border-slate-800 bg-slate-900 md:order-1 md:h-full md:w-96 md:border-r">
         <header className="border-b border-slate-800 px-4 pt-4">
           <h1 className="text-lg font-semibold">Weather Explorer</h1>
-          <p className="text-sm text-slate-400">Explore the weather anywhere in the world</p>
+          <p className="hidden text-sm text-slate-400 md:block">Explore the weather anywhere in the world</p>
 
           <nav role="tablist" aria-label="Panel" className="mt-3 flex gap-1">
             <TabButton active={tab === 'details'} onClick={() => setTab('details')}>
