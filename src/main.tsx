@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import 'leaflet/dist/leaflet.css' // Leaflet needs its own CSS to position tiles and controls
 import './index.css'
 import App from './App.tsx'
 import { queryClient } from './lib/queryClient'

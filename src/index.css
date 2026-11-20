@@ -10,3 +10,8 @@ body,
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
 }
+
+/* Dark background behind tiles while they load (instead of Leaflet's light grey). */
+.leaflet-container {
+  @apply bg-slate-950 font-sans;
+}
