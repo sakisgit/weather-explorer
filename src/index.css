@@ -15,3 +15,17 @@ body {
 .leaflet-container {
   @apply bg-slate-950 font-sans;
 }
+
+/* Weather grid markers (Leaflet DivIcons are plain HTML strings, so they are styled here). */
+.grid-marker {
+  background: none;
+  border: none;
+}
+.grid-pill {
+  @apply flex h-full w-full cursor-pointer items-center justify-center gap-1 rounded-full bg-slate-900/85 text-xs font-semibold shadow-md;
+  border: 1.5px solid var(--temp-color);
+  color: var(--temp-color);
+}
+.grid-pill:hover {
+  @apply bg-slate-800;
+}

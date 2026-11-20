@@ -3,6 +3,7 @@ import { CircleMarker, MapContainer, TileLayer, Tooltip, ZoomControl, useMap, us
 import type { LatLon } from '../../api/types'
 import type { Place } from '../../types'
 import { placeFromCoords } from '../../utils/places'
+import { GridLayer } from './GridLayer'
 
 interface Props {
   selected: Place | null
@@ -44,6 +45,7 @@ export function WeatherMap({ selected, myLocation, onSelect }: Props) {
       />
       <ZoomControl position="bottomright" />
 
+      <GridLayer onSelect={onSelect} />
       <MapClickHandler onSelect={onSelect} />
       <FlyToSelected selected={selected} />
 

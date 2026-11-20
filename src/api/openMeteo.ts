@@ -1,5 +1,5 @@
 import { getJson } from './http'
-import type { CurrentOnlyResponse, ForecastResponse, LatLon } from './types'
+import type { CurrentOnlyResponse, ForecastResponse, GridPointForecast, LatLon } from './types'
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'
 
@@ -60,5 +60,27 @@ export async function fetchCurrentBatch(points: LatLon[], signal?: AbortSignal):
   const data = await getJson<CurrentOnlyResponse | CurrentOnlyResponse[]>(`${FORECAST_URL}?${params}`, signal)
 
   // With a single location the API returns an object, not an array. Normalize.
+  return Array.isArray(data) ? data : [data]
+}
+
+/**
+ * Hourly temperature + weather icon for MANY map grid points, in ONE request.
+ *
+ * - timezone=GMT (UTC): every point shares the same clock, so "hour 5" means the
+ *   same moment everywhere. That's what lets the time slider move the whole map at once.
+ * - forecast_days=3 gives 72 hours, enough for "now + 48 h" on the slider.
+ * - Only 3 variables: Open-Meteo counts requests with more than 10 variables as extra calls.
+ */
+export async function fetchGridForecast(points: LatLon[], signal?: AbortSignal): Promise<GridPointForecast[]> {
+  if (points.length === 0) return []
+
+  const params = new URLSearchParams({
+    latitude: points.map((p) => p.lat).join(','),
+    longitude: points.map((p) => p.lon).join(','),
+    hourly: 'temperature_2m,weather_code,is_day',
+    forecast_days: '3',
+    timezone: 'GMT',
+  })
+  const data = await getJson<GridPointForecast | GridPointForecast[]>(`${FORECAST_URL}?${params}`, signal)
   return Array.isArray(data) ? data : [data]
 }

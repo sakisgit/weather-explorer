@@ -54,6 +54,21 @@ export interface CurrentOnlyResponse {
   current: Pick<CurrentWeather, 'time' | 'temperature_2m' | 'weather_code' | 'wind_speed_10m' | 'is_day'>
 }
 
+/**
+ * Hourly data for one point of the map grid (temperature + icon for each hour).
+ * Requested in UTC so every point shares the same time axis (needed by the time slider).
+ */
+export interface GridPointForecast {
+  latitude: number
+  longitude: number
+  hourly: {
+    time: string[]
+    temperature_2m: number[]
+    weather_code: number[]
+    is_day: number[]
+  }
+}
+
 /** One result of the Geocoding API search. Optional fields are missing for some places. */
 export interface GeoPlace {
   id: number
