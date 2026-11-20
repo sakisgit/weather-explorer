@@ -73,6 +73,19 @@ export interface GridPointForecast {
   }
 }
 
+/**
+ * Current sea conditions from the Marine API. On land there is no sea model,
+ * and the API answers with null values instead of an error.
+ */
+export interface MarineResponse {
+  current: {
+    time: string
+    wave_height: number | null // metres
+    wave_direction: number | null // degrees, where the waves come FROM
+    wave_period: number | null // seconds between two waves
+  }
+}
+
 /** One result of the Geocoding API search. Optional fields are missing for some places. */
 export interface GeoPlace {
   id: number

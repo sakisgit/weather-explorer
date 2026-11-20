@@ -1,7 +1,8 @@
 import { getJson } from './http'
-import type { CompareResponse, ForecastResponse, GridPointForecast, LatLon } from './types'
+import type { CompareResponse, ForecastResponse, GridPointForecast, LatLon, MarineResponse } from './types'
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'
+const MARINE_URL = 'https://marine-api.open-meteo.com/v1/marine'
 
 // Variables we ask for. Keep in sync with the types in ./types.ts
 const CURRENT_VARS = [
@@ -87,4 +88,18 @@ export async function fetchGridForecast(points: LatLon[], signal?: AbortSignal):
   })
   const data = await getJson<GridPointForecast | GridPointForecast[]>(`${FORECAST_URL}?${params}`, signal)
   return Array.isArray(data) ? data : [data]
+}
+
+/**
+ * Current waves at a point (Open-Meteo Marine API, also free and keyless).
+ * A separate service: the weather forecast API has no wave data.
+ */
+export function fetchMarine({ lat, lon }: LatLon, signal?: AbortSignal) {
+  const params = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    current: 'wave_height,wave_direction,wave_period',
+    timezone: 'auto',
+  })
+  return getJson<MarineResponse>(`${MARINE_URL}?${params}`, signal)
 }

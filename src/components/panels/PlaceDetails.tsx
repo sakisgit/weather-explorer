@@ -1,8 +1,8 @@
-import { Droplets, Thermometer, Wind } from 'lucide-react'
+import { Droplets, Thermometer, Waves, Wind } from 'lucide-react'
 import { Suspense, lazy } from 'react'
-import { useForecast } from '../../hooks/useForecast'
+import { useForecast, useMarine } from '../../hooks/useForecast'
 import type { Place } from '../../types'
-import { degreesToCompass, formatHour, formatTemp, toHourSlot } from '../../utils/format'
+import { beaufort, degreesToCompass, formatHour, formatTemp, seaState, toHourSlot } from '../../utils/format'
 import { getWeatherInfo } from '../../utils/weatherCodes'
 import { ChartPlaceholder } from '../ui/ChartPlaceholder'
 import { SaveButton } from '../ui/SaveButton'
@@ -20,6 +20,8 @@ const ForecastChart = lazy(() => import('./ForecastChart').then((m) => ({ defaul
  */
 export function PlaceDetails({ place }: { place: Place }) {
   const { data, isPending, isError, error, refetch } = useForecast(place)
+  // Waves come from a second API (Marine), fetched in parallel; null on land.
+  const { data: sea } = useMarine(place)
 
   return (
     <article className="space-y-5">
@@ -42,14 +44,17 @@ export function PlaceDetails({ place }: { place: Place }) {
         </div>
       )}
 
-      {data && <DetailsContent data={data} />}
+      {data && <DetailsContent data={data} sea={sea ?? null} />}
     </article>
   )
 }
 
-function DetailsContent({ data }: { data: NonNullable<ReturnType<typeof useForecast>['data']> }) {
+type Sea = NonNullable<ReturnType<typeof useMarine>['data']>
+
+function DetailsContent({ data, sea }: { data: NonNullable<ReturnType<typeof useForecast>['data']>; sea: Sea | null }) {
   const { current, hourly, daily } = data
   const info = getWeatherInfo(current.weather_code, current.is_day === 1)
+  const wind = beaufort(current.wind_speed_10m)
 
   // The hourly arrays start at local midnight today; find the slot for "now" at that place.
   const nowIndex = Math.max(0, hourly.time.indexOf(toHourSlot(current.time)))
@@ -72,8 +77,11 @@ function DetailsContent({ data }: { data: NonNullable<ReturnType<typeof useForec
             icon={<Wind />}
             label="Wind"
             value={`${Math.round(current.wind_speed_10m)} km/h ${degreesToCompass(current.wind_direction_10m)}`}
+            note={`${wind.force} Bf`}
+            title={`Beaufort ${wind.force}: ${wind.name}`}
           />
         </dl>
+        {sea && <SeaConditions sea={sea} windName={wind.name} />}
         <p className="mt-3 text-xs text-slate-500">Local time {formatHour(current.time)}</p>
       </section>
 
@@ -96,14 +104,55 @@ function DetailsContent({ data }: { data: NonNullable<ReturnType<typeof useForec
   )
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+/**
+ * Waves at the place, shown only over (or next to) the sea. The wind's Beaufort name
+ * sits here too: on the sea, the two together describe the conditions.
+ */
+function SeaConditions({ sea, windName }: { sea: Sea; windName: string }) {
+  const height = sea.wave_height!
+  const details = [
+    sea.wave_direction !== null && `from ${degreesToCompass(sea.wave_direction)}`,
+    sea.wave_period !== null && `every ${Math.round(sea.wave_period)} s`,
+  ].filter(Boolean)
+
   return (
-    <div className="rounded-lg bg-slate-900/60 p-2">
+    <div className="mt-2 flex items-center gap-3 rounded-lg bg-slate-900/60 px-3 py-2 text-xs">
+      <Waves className="h-5 w-5 shrink-0 text-sky-400" aria-hidden />
+      <div className="min-w-0">
+        <div className="text-slate-100">
+          Waves <span className="font-medium">{height.toFixed(1)} m</span> · {seaState(height)} sea
+        </div>
+        <div className="text-slate-400">
+          {details.join(', ')}
+          {details.length > 0 && ' · '}
+          {windName}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Stat({
+  icon,
+  label,
+  value,
+  note,
+  title,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  note?: string
+  title?: string
+}) {
+  return (
+    <div className="rounded-lg bg-slate-900/60 p-2" title={title}>
       <dt className="flex items-center justify-center gap-1 text-slate-400 [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:text-sky-400">
         {icon}
         {label}
       </dt>
       <dd className="mt-0.5 text-sm text-slate-100">{value}</dd>
+      {note && <dd className="text-[11px] text-slate-400">{note}</dd>}
     </div>
   )
 }

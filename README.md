@@ -4,18 +4,19 @@ Explore the weather anywhere in the world on an interactive map, dive into the p
 
 **Live demo:** https://weather-explorer-smoky.vercel.app
 
-Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.com/) Forecast and Geocoding APIs. **No API keys are required.**
+Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.com/) Forecast, Geocoding and Marine APIs. **No API keys are required.**
 
 ## Features
 
 - **TV-forecast-style map overview.** Cities with a weather icon and a temperature colored on a scale. More cities appear as you zoom in, and labels never overlap.
 - **Timeline with play.** A timeline at the bottom of the map, with the days marked on it. Scrub through the next 48 hours, or press play to watch the weather move across the map once (it stops at +48 h; press again to replay). The temperature color scale sits separately above the zoom buttons.
-- **Place details.** Current conditions (feels like, humidity, wind), a 48-hour temperature and rain chart, and a 7-day forecast. The chart line is colored with the same temperature scale as the map, the high and low are marked, midnight is shown as a dashed day line, and hovering shows a crosshair with a tooltip.
+- **Place details.** Current conditions (feels like, humidity, wind with its Beaufort force), a 48-hour temperature and rain chart, and a 7-day forecast. The chart line is colored with the same temperature scale as the map, the high and low are marked, midnight is shown as a dashed day line, and hovering shows a crosshair with a tooltip.
+- **Sea conditions.** On the sea or the coast the details also show the waves: height, sea state (e.g. "Slight sea"), direction and period, next to the wind's Beaufort name. They come from the Open-Meteo Marine API, which returns no values on land, so inland places simply don't show the card.
 - **Search.** Debounced place search with keyboard navigation (↑ ↓ Enter Esc), a clear button and a loading spinner. Press `/` anywhere to jump to it. Pressing Enter before the results have caught up with your typing opens the right place once they arrive, never a result of the previous search. The map flies to the selected place.
 - **Click anywhere on the map** to get the forecast for that point.
 - **Current location.** A "My location" button. Returning users who already granted permission are located automatically.
 - **My places.** Save up to 12 places (persisted in `localStorage`) and compare them: current weather, today's high/low and rain chance, sorting by temperature, and a 7-day high-temperature chart.
-- **Map styles.** Switch the basemap between Dark (the default, so the weather stands out), Light and Color (topographic). On the lighter maps every city label gets a dark card so it stays readable.
+- **Map styles.** Switch the basemap between Dark, Light and Color (topographic). On the first visit the map follows the device's light or dark setting; after that the user's choice is remembered. On the lighter maps every city label gets a dark card so it stays readable.
 - **Collapsible panel.** An arrow collapses the side panel (or the bottom panel on phones) to give the map the whole screen; collapsed, it keeps an icon rail for the two tabs (with a badge for the saved places count). Picking a place opens it again. The panel state and the map style are remembered between visits.
 - Responsive layout: map and side panel on desktop, map above the panel on mobile. On a phone the map controls get more compact, and a selected place is centred in the part of the map not covered by the search box or the timeline.
 
@@ -86,9 +87,10 @@ Open-Meteo's free tier allows roughly 600 calls per minute and 10,000 per day **
 4. **Per-point caching on the map.** Each city's forecast is cached under its own key. When the map moves, only the cities that are not already cached are requested, in a single batch. Panning so that three new cities appear costs three locations, not the whole screen.
 5. **Debouncing.** Search waits 300 ms after the last keystroke (and needs at least 2 characters). Map updates wait 400 ms after panning or zooming stops.
 6. **Hard caps.** At most 40 cities per view and at most 12 saved places.
-7. **Few variables.** Map requests use 3 variables and compare requests use 7, so they stay under the 10-variable threshold.
-8. **The time slider makes zero requests.** Each city already has 72 hourly values in UTC, so scrubbing or playing only changes which hour is displayed.
-9. **Sensible retries and a time limit.** Every request gives up after 10 seconds (`AbortSignal.timeout`, combined with TanStack Query's own cancellation through `AbortSignal.any`), so a hanging connection never leaves a spinner forever. Network errors, timeouts and 5xx responses are retried up to 2 times. 4xx responses, including **429 Too Many Requests**, are never retried. Requests whose results are no longer needed (for example when the user keeps typing) are aborted.
+7. **Waves only when a place is opened.** The Marine API is called for the one place in the details panel (cached like the forecast), never for the cities on the map.
+8. **Few variables.** Map requests use 3 variables and compare requests use 7, so they stay under the 10-variable threshold.
+9. **The time slider makes zero requests.** Each city already has 72 hourly values in UTC, so scrubbing or playing only changes which hour is displayed.
+10. **Sensible retries and a time limit.** Every request gives up after 10 seconds (`AbortSignal.timeout`, combined with TanStack Query's own cancellation through `AbortSignal.any`), so a hanging connection never leaves a spinner forever. Network errors, timeouts and 5xx responses are retried up to 2 times. 4xx responses, including **429 Too Many Requests**, are never retried. Requests whose results are no longer needed (for example when the user keeps typing) are aborted.
 
 ### Other decisions
 
@@ -99,7 +101,7 @@ Open-Meteo's free tier allows roughly 600 calls per minute and 10,000 per day **
 - **Weather icons as static files.** The Meteocons SVGs live in `public/weather-icons/`, so the browser downloads only the ones on screen and caches them, and they add nothing to the JavaScript bundle. The panel uses the animated versions; the map uses static ones, because 50+ icons moving at once would distract and cost CPU.
 - **Lazy-loaded charts.** Chart.js was about a third of the bundle but is only needed once a place is opened. Both chart components are loaded with `React.lazy` + `Suspense` (with a placeholder of the same height, so the layout doesn't jump), which took the initial JavaScript from 202 kB to 139 kB gzipped (about 145 kB today, after later features) and removes Vite's large-chunk warning.
 - **Geolocation.** The app never shows the permission prompt on page load, because unprompted requests tend to get denied permanently. It uses the Permissions API to locate automatically only if permission was already granted; otherwise it waits for a click. Errors (denied, unavailable, timeout) show friendly messages with alternatives.
-- **Basemaps.** Esri tiles (Dark Gray, Light Gray and Topographic): no API key needed. Dark is the default because a muted dark map lets the weather colors stand out. CARTO dark tiles were my first choice, but they now require an API key, and a key in a public, client-side app would be visible to everyone.
+- **Basemaps.** Esri tiles (Dark Gray, Light Gray and Topographic): no API key needed. A muted map lets the weather colors stand out; the first one shown matches the device's color scheme (`prefers-color-scheme`). CARTO dark tiles were my first choice, but they now require an API key, and a key in a public, client-side app would be visible to everyone.
 - **Accessibility.** The search box follows the ARIA combobox pattern, the tabs use `tablist`/`tab` roles, the time slider is a native range input with `aria-valuetext`, the save button uses `aria-pressed`, and loading and error states are announced.
 
 ## 3. Incomplete requirements and known limitations

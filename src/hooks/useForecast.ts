@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { fetchCompareBatch, fetchForecast } from '../api/openMeteo'
+import { fetchCompareBatch, fetchForecast, fetchMarine } from '../api/openMeteo'
 import type { LatLon } from '../api/types'
 import { roundLatLon } from '../utils/coords'
 
@@ -15,6 +15,24 @@ export function useForecast(point: LatLon | null) {
   return useQuery({
     queryKey: ['forecast', rounded?.lat, rounded?.lon],
     queryFn: ({ signal }) => fetchForecast(rounded!, signal),
+    enabled: rounded !== null,
+  })
+}
+
+/**
+ * Current waves for one place. Returns null on land (no sea data), so the
+ * details panel simply leaves the "Sea" card out. Extra information only:
+ * a failed request is not shown as an error, the card just doesn't appear.
+ */
+export function useMarine(point: LatLon | null) {
+  const rounded = point ? roundLatLon(point) : null
+
+  return useQuery({
+    queryKey: ['marine', rounded?.lat, rounded?.lon],
+    queryFn: async ({ signal }) => {
+      const { current } = await fetchMarine(rounded!, signal)
+      return current.wave_height === null ? null : current
+    },
     enabled: rounded !== null,
   })
 }

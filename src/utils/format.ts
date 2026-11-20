@@ -42,3 +42,45 @@ const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 export function degreesToCompass(deg: number): string {
   return COMPASS[Math.round(deg / 45) % 8]
 }
+
+/**
+ * Beaufort scale: wind speed (km/h) -> force 0-12 and its name.
+ * BEAUFORT_LIMITS[i] is the lowest speed of force i + 1.
+ */
+const BEAUFORT_LIMITS = [1, 6, 12, 20, 29, 39, 50, 62, 75, 89, 103, 118]
+const BEAUFORT_NAMES = [
+  'Calm',
+  'Light air',
+  'Light breeze',
+  'Gentle breeze',
+  'Moderate breeze',
+  'Fresh breeze',
+  'Strong breeze',
+  'Near gale',
+  'Gale',
+  'Strong gale',
+  'Storm',
+  'Violent storm',
+  'Hurricane force',
+]
+
+export function beaufort(kmh: number): { force: number; name: string } {
+  const force = BEAUFORT_LIMITS.filter((limit) => Math.round(kmh) >= limit).length
+  return { force, name: BEAUFORT_NAMES[force] }
+}
+
+/** Wave height (m) -> the WMO sea state name ("Slight", "Rough"…). */
+const SEA_STATES: [maxMetres: number, name: string][] = [
+  [0.1, 'Calm'],
+  [0.5, 'Smooth'],
+  [1.25, 'Slight'],
+  [2.5, 'Moderate'],
+  [4, 'Rough'],
+  [6, 'Very rough'],
+  [9, 'High'],
+  [14, 'Very high'],
+]
+
+export function seaState(metres: number): string {
+  return SEA_STATES.find(([max]) => metres <= max)?.[1] ?? 'Phenomenal'
+}
