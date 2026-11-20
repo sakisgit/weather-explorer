@@ -8,12 +8,15 @@ export interface Rect {
 
 /**
  * Screen rectangles of the UI floating over the map (elements marked with
- * `data-map-obstacle`, e.g. the search box and the time-slider card),
+ * `data-map-obstacle`, e.g. the search box and the time-slider card, plus
+ * Leaflet's zoom and attribution controls),
  * relative to the map's top-left corner.
  */
 export function readObstacles(mapContainer: HTMLElement): Rect[] {
   const map = mapContainer.getBoundingClientRect()
-  return [...document.querySelectorAll('[data-map-obstacle]')].map((el) => {
+  // Leaflet's own controls (zoom buttons, attribution) count too.
+  const selector = '[data-map-obstacle], .leaflet-control-zoom, .leaflet-control-attribution'
+  return [...mapContainer.ownerDocument.querySelectorAll(selector)].map((el) => {
     const r = el.getBoundingClientRect()
     return { left: r.left - map.left, top: r.top - map.top, right: r.right - map.left, bottom: r.bottom - map.top }
   })
