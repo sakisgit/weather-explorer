@@ -78,7 +78,8 @@ function App() {
 
         {/* Floats above the map. Leaflet panes use z-index up to ~1000, so we go higher. */}
         <div className="absolute top-3 right-3 left-3 z-[1100] sm:right-auto sm:w-96">
-          <div className="flex gap-2">
+          {/* data-map-obstacle: the map won't place city labels under this element */}
+          <div className="flex gap-2" data-map-obstacle>
             <div className="flex-1">
               <SearchBox onSelect={selectPlace} />
             </div>

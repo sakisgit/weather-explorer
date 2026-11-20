@@ -7,7 +7,7 @@ import { useMapWeather } from '../../hooks/useMapWeather'
 import type { LatLon } from '../../api/types'
 import { usePlacesStore } from '../../store/usePlacesStore'
 import type { Place } from '../../types'
-import { type MapView, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
+import { type MapView, type Rect, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
 import { temperatureColor, temperatureGradientCss } from '../../utils/temperatureColor'
 import { addHoursToSlot, formatSlotForUser } from '../../utils/time'
 import { getWeatherInfo } from '../../utils/weatherCodes'
@@ -113,10 +113,22 @@ function useMapView(): MapView {
   const map = useMap()
   const read = useCallback((): MapView => {
     const b = map.getBounds()
-    return { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast(), zoom: map.getZoom() }
+    return {
+      south: b.getSouth(),
+      west: b.getWest(),
+      north: b.getNorth(),
+      east: b.getEast(),
+      zoom: map.getZoom(),
+      obstacles: readObstacles(map.getContainer()),
+    }
   }, [map])
 
   const [view, setView] = useState(read)
+  // The floating UI isn't laid out yet on the very first render: read again on the next frame.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setView(read()))
+    return () => cancelAnimationFrame(id)
+  }, [read])
   useMapEvents({
     moveend: () => setView(read()), // fires after both pans and zooms
     resize: () => setView(read()),
@@ -136,6 +148,18 @@ function labelCoversPoint(map: L.Map, zoom: number, city: VisibleCity, point: La
   const dx = b.x - a.x
   const dy = b.y - a.y // positive = below the city coordinate
   return Math.abs(dx) <= LABEL_HALF_WIDTH && dy >= -LABEL_ABOVE && dy <= LABEL_BELOW
+}
+
+/**
+ * Screen rectangles of the UI floating over the map (elements marked with
+ * `data-map-obstacle`), relative to the map's top-left corner.
+ */
+function readObstacles(container: HTMLElement): Rect[] {
+  const map = container.getBoundingClientRect()
+  return [...document.querySelectorAll('[data-map-obstacle]')].map((el) => {
+    const r = el.getBoundingClientRect()
+    return { left: r.left - map.left, top: r.top - map.top, right: r.right - map.left, bottom: r.bottom - map.top }
+  })
 }
 
 interface MarkerProps {
@@ -213,6 +237,7 @@ function MapControlsCard({ loading, error, children }: { loading: boolean; error
   return (
     <div
       ref={ref}
+      data-map-obstacle // the map won't place city labels under this card
       className="absolute right-14 bottom-6 left-3 z-[1000] space-y-3 rounded-lg bg-slate-900/90 p-3 text-[11px] text-slate-300 shadow-lg backdrop-blur sm:right-auto sm:w-80"
     >
       {children}
