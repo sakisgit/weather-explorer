@@ -299,7 +299,7 @@ function CollapseButton({ open, onClick }: { open: boolean; onClick: () => void 
       onClick={onClick}
       aria-expanded={open}
       aria-label={open ? 'Collapse time controls' : 'Expand time controls'}
-      title={open ? 'Collapse' : 'Expand'}
+      title={open ? 'Hide the timeline' : 'Show the timeline'}
       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-800 hover:text-sky-400"
     >
       <ChevronRight

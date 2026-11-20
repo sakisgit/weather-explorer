@@ -52,7 +52,7 @@ export function TimeSlider({
         type="button"
         onClick={onTogglePlay}
         aria-label={playing ? 'Pause animation' : atEnd ? 'Replay the next 48 hours' : 'Play the next 48 hours'}
-        title={playing ? 'Pause' : atEnd ? 'Replay' : 'Play'}
+        title={playing ? 'Pause' : atEnd ? 'Replay the 48-hour forecast' : 'Play the 48-hour forecast on the map'}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white shadow hover:bg-sky-500"
       >
         {playing ? (
@@ -66,6 +66,10 @@ export function TimeSlider({
 
       {/* Fixed width, so the slider doesn't shift as the time text changes */}
       <div className="w-[4.75rem] shrink-0 leading-tight" aria-live="off">
+        {/* Says what this control is, even when collapsed to just play + time */}
+        <div className="text-[9px] font-semibold tracking-wide whitespace-nowrap text-sky-400/90 uppercase">
+          48h forecast
+        </div>
         <div className="text-sm font-medium text-slate-100 tabular-nums">{label}</div>
         <div className="truncate text-[11px] text-slate-400">{status ?? relative}</div>
       </div>
