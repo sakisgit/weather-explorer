@@ -11,6 +11,20 @@ body {
   @apply bg-slate-950 text-slate-100 antialiased;
 }
 
+/*
+ * Tailwind v4 no longer gives buttons the "hand" cursor (it follows the browser default).
+ * Everything clickable gets it back here, once, instead of on every button.
+ */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='option'],
+  input[type='range'],
+  label[for] {
+    cursor: pointer;
+  }
+}
+
 /* Dark background behind tiles while they load (instead of Leaflet's light grey). */
 .leaflet-container {
   @apply bg-slate-950 font-sans;
