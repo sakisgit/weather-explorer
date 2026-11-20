@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Weather Explorer icon: the sun rising behind a globe, in the app's blues -->
+  <!-- Weather Explorer icon: the sun rising behind a glass globe, in the app's blues -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#38bdf8"/><stop offset=".55" stop-color="#0284c7"/><stop offset="1" stop-color="#075985"/>
@@ -7,8 +7,12 @@
     <radialGradient id="sun" cx=".4" cy=".35" r=".7">
       <stop offset="0" stop-color="#fef08a"/><stop offset=".6" stop-color="#facc15"/><stop offset="1" stop-color="#f59e0b"/>
     </radialGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#fde047" stop-opacity=".55"/><stop offset="1" stop-color="#fde047" stop-opacity="0"/>
+    </radialGradient>
+    <!-- A see-through "glass" fill: lighter at the top left, darker at the bottom right -->
     <linearGradient id="globe" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e0f2fe"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/><stop offset="1" stop-color="#0c4a6e" stop-opacity=".45"/>
     </linearGradient>
     <!-- Cuts a gap out of the sun around the globe, so the two shapes stay distinct -->
     <mask id="cut"><rect width="64" height="64" fill="#fff"/><circle cx="29" cy="36" r="21.5" fill="#000"/></mask>
@@ -16,17 +20,18 @@
     <clipPath id="g"><circle cx="29" cy="36" r="18"/></clipPath>
   </defs>
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <!-- The sun and its rays, cut around the globe -->
+  <!-- The sun: a soft glow, then the disc, cut around the globe -->
   <g mask="url(#cut)">
-    <circle cx="45" cy="19" r="10" fill="url(#sun)"/>
-    <path d="M45 4.5v2.5M58.5 19H56M54.5 9.5l-1.8 1.8M35.5 9.5l1.8 1.8M54.5 28.5l-1.8-1.8" stroke="#fde68a" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="45" cy="19" r="15" fill="url(#glow)"/>
+    <circle cx="45" cy="19" r="9.5" fill="url(#sun)"/>
   </g>
   <!-- The globe: meridians and slightly curved parallels for a 3D look -->
   <circle cx="29" cy="36" r="18" fill="url(#globe)"/>
-  <g clip-path="url(#g)" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round">
+  <g clip-path="url(#g)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".95">
     <ellipse cx="29" cy="36" rx="7.5" ry="18"/>
     <path d="M29 18v36M11 36h36"/>
     <path d="M13.5 27c9.5 3 21.5 3 31 0"/>
     <path d="M13.5 45c9.5-3 21.5-3 31 0"/>
   </g>
+  <circle cx="29" cy="36" r="18" fill="none" stroke="#fff" stroke-width="3"/>
 </svg>
