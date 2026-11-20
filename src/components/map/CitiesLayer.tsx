@@ -11,8 +11,8 @@ import { useUiStore } from '../../store/useUiStore'
 import type { Place } from '../../types'
 import { readObstacles } from '../../utils/mapObstacles'
 import { type MapView, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
-import { temperatureColor, temperatureGradientCss } from '../../utils/temperatureColor'
-import { addHoursToSlot, formatSlotForUser } from '../../utils/time'
+import { temperatureColor } from '../../utils/temperatureColor'
+import { addHoursToSlot, dayStartTicks, formatSlotForUser } from '../../utils/time'
 import { getWeatherInfo, weatherIconUrl } from '../../utils/weatherCodes'
 import { TimeSlider } from '../ui/TimeSlider'
 
@@ -38,7 +38,7 @@ const LABEL_ABOVE = 18
 const LABEL_BELOW = 34
 
 const MAX_HOURS = 48
-const PLAY_STEP_MS = 600 // one forecast hour every 0.6 s: a 48 h loop takes ~30 s
+const PLAY_STEP_MS = 600 // one forecast hour every 0.6 s: the full 48 h take ~30 s
 
 /**
  * The "TV forecast" layer: city names with a weather icon and temperature.
@@ -50,7 +50,7 @@ export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
   const map = useMap()
   const view = useMapView()
   const savedPlaces = usePlacesStore((s) => s.places)
-  // Collapsed card = just play + time, so the map is almost free (persisted preference).
+  // Collapsed timeline = just play + time, so the map is almost free (persisted preference).
   const controlsOpen = useUiStore((s) => s.mapControlsOpen)
   const setControlsOpen = useUiStore((s) => s.setMapControlsOpen)
   // Wait until the user stops panning/zooming before requesting anything.
@@ -64,15 +64,27 @@ export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
   const [hourOffset, setHourOffset] = useState(0)
   const [playing, setPlaying] = useState(false)
 
+  // Play runs ONCE to +48 h and stops there (it doesn't loop). One timeout per step:
+  // each new hour schedules the next one, and pausing (or unmounting) cancels it.
   useEffect(() => {
     if (!playing) return
-    const id = setInterval(() => setHourOffset((h) => (h + 1) % (MAX_HOURS + 1)), PLAY_STEP_MS) // loops back to "now"
-    return () => clearInterval(id)
-  }, [playing])
+    const id = setTimeout(() => {
+      if (hourOffset >= MAX_HOURS) setPlaying(false)
+      else setHourOffset(hourOffset + 1)
+    }, PLAY_STEP_MS)
+    return () => clearTimeout(id)
+  }, [playing, hourOffset])
+
+  const togglePlay = () => {
+    // Pressing play at the end starts again from "Now".
+    if (!playing && hourOffset >= MAX_HOURS) setHourOffset(0)
+    setPlaying(!playing)
+  }
 
   // All cities use the same UTC hour, so the whole map shows the same moment.
   const nowSlot = useCurrentUtcHour()
   const slot = addHoursToSlot(nowSlot, hourOffset)
+  const dayTicks = useMemo(() => dayStartTicks(nowSlot, MAX_HOURS), [nowSlot])
 
   return (
     <>
@@ -104,9 +116,19 @@ export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
         })}
       </Pane>
 
-      <MapControlsCard loading={isFetching} error={isError} collapsed={!controlsOpen}>
+      <Timeline collapsed={!controlsOpen}>
         <TimeSlider
           compact={!controlsOpen}
+          dayTicks={dayTicks}
+          status={
+            isFetching ? (
+              <span className="text-sky-400">Updating…</span>
+            ) : isError ? (
+              <span className="text-amber-400" title="Map data unavailable">
+                Data unavailable
+              </span>
+            ) : undefined
+          }
           trailing={<CollapseButton open={controlsOpen} onClick={() => setControlsOpen(!controlsOpen)} />}
           value={hourOffset}
           max={MAX_HOURS}
@@ -115,10 +137,10 @@ export function CitiesLayer({ selected, myLocation, onSelect }: Props) {
             setHourOffset(h)
           }}
           playing={playing}
-          onTogglePlay={() => setPlaying((p) => !p)}
+          onTogglePlay={togglePlay}
           label={formatSlotForUser(slot)}
         />
-      </MapControlsCard>
+      </Timeline>
     </>
   )
 }
@@ -222,67 +244,38 @@ const CityMarker = memo(function CityMarker({
 })
 
 /**
- * Bottom-left card: time slider + temperature legend + loading/error status.
+ * The timeline bar: centered at the bottom of the map (phones: full width, left of the zoom buttons).
+ * The temperature legend is a separate control above the zoom buttons (TemperatureLegend.tsx).
  *
- * This card lives INSIDE the Leaflet map container, so by default every click
+ * This bar lives INSIDE the Leaflet map container, so by default every click
  * or drag on it would also reach the map (dragging the slider would pan the map,
  * clicking would select a point). Leaflet's DomEvent helpers stop that.
  */
-function MapControlsCard({
-  loading,
-  error,
-  collapsed,
-  children,
-}: {
-  loading: boolean
-  error: boolean
-  collapsed: boolean
-  children: React.ReactNode
-}) {
+function Timeline({ collapsed, children }: { collapsed: boolean; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!ref.current) return
     L.DomEvent.disableClickPropagation(ref.current)
-    L.DomEvent.disableScrollPropagation(ref.current) // scrolling over the card doesn't zoom the map
+    L.DomEvent.disableScrollPropagation(ref.current) // scrolling over the bar doesn't zoom the map
   }, [])
 
   return (
     <div
       ref={ref}
-      data-map-obstacle // the map won't place city labels under this card
-      // Mobile: sits above the attribution (two lines there) and is more compact.
-      // Collapsed: only as wide as its content.
-      className={`absolute bottom-12 left-3 z-[1000] flex flex-col gap-2 rounded-lg bg-slate-900/90 p-2.5 text-[11px] text-slate-300 shadow-lg backdrop-blur sm:bottom-6 sm:gap-3 sm:p-3 ${
-        collapsed ? '' : 'right-14 sm:right-auto sm:w-80'
+      data-map-obstacle // the map won't place city labels under this bar
+      // Phones: above the attribution (two lines there). Desktop: centered, at most 36rem wide,
+      // leaving room for the zoom buttons. Collapsed: only as wide as its content.
+      className={`absolute bottom-12 left-3 z-[1000] rounded-xl border border-slate-700/60 bg-slate-900/90 py-2 pr-2 pl-2 text-slate-300 shadow-lg backdrop-blur sm:bottom-6 sm:left-1/2 sm:-translate-x-1/2 sm:pr-3 ${
+        collapsed ? '' : 'right-14 sm:right-auto sm:w-[min(36rem,calc(100%-9rem))]'
       }`}
     >
       {children}
-
-      {/* The legend: on phones (or when collapsed) this block only takes space while there is a status to show */}
-      <div className={loading || error ? '' : collapsed ? 'hidden' : 'hidden sm:block'}>
-        <div className="flex justify-between sm:mb-1">
-          {/* The legend is hidden on small screens to leave more of the map visible */}
-          <span className={collapsed ? 'hidden' : 'hidden sm:inline'}>Temperature</span>
-          {loading && <span className="text-sky-400">Updating…</span>}
-          {error && !loading && <span className="text-amber-400">Map data unavailable</span>}
-        </div>
-        <div
-          className={`hidden h-2 rounded-full ${collapsed ? '' : 'sm:block'}`}
-          style={{ background: temperatureGradientCss() }}
-        />
-        <div className={`mt-0.5 hidden justify-between text-slate-400 ${collapsed ? '' : 'sm:flex'}`}>
-          <span>-20°</span>
-          <span>0°</span>
-          <span>20°</span>
-          <span>40°</span>
-        </div>
-      </div>
     </div>
   )
 }
 
-/** Collapses the card to just play + time, or expands it again. The chevron points the way it will move. */
+/** Collapses the timeline to just play + time, or expands it again. The chevron points the way it will move. */
 function CollapseButton({ open, onClick }: { open: boolean; onClick: () => void }) {
   return (
     <button

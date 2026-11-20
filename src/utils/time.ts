@@ -11,6 +11,22 @@ export function addHoursToSlot(slot: string, hours: number): string {
 }
 
 /**
+ * Where each new day starts on the time slider, in the USER's time zone:
+ * [{ position: 0.29, label: 'Sat' }, ...], position = 0..1 along the slider.
+ * Days starting in the first or last 3 hours are left out, so they don't crowd "Now" or the end.
+ */
+export function dayStartTicks(nowSlot: string, maxHours: number): Array<{ position: number; label: string }> {
+  const ticks = []
+  for (let h = 3; h <= maxHours - 3; h++) {
+    const d = new Date(`${addHoursToSlot(nowSlot, h)}:00Z`)
+    if (d.getHours() === 0) {
+      ticks.push({ position: h / maxHours, label: d.toLocaleDateString('en-GB', { weekday: 'short' }) })
+    }
+  }
+  return ticks
+}
+
+/**
  * "2026-11-20T14:00" (UTC) -> "Fri 16:00" in the USER's own time zone.
  * The map shows one moment for the whole world, so we label it in the viewer's clock.
  */

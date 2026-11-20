@@ -42,10 +42,10 @@ function rgba(rgb: number[], alpha: number): string {
   return alpha === 1 ? `rgb(${rgb.join(',')})` : `rgba(${rgb.join(',')},${alpha})`
 }
 
-/** CSS gradient with the same stops, for the legend. */
-export function temperatureGradientCss(): string {
+/** CSS gradient with the same stops, for the legends. */
+export function temperatureGradientCss(direction = 'to right'): string {
   const min = TEMPERATURE_STOPS[0][0]
   const max = TEMPERATURE_STOPS[TEMPERATURE_STOPS.length - 1][0]
   const parts = TEMPERATURE_STOPS.map(([t, c]) => `${c} ${((t - min) / (max - min)) * 100}%`)
-  return `linear-gradient(to right, ${parts.join(', ')})`
+  return `linear-gradient(${direction}, ${parts.join(', ')})`
 }

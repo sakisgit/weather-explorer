@@ -9,6 +9,7 @@ import { useUiStore } from '../../store/useUiStore'
 import { freeCenterOffsetY, readObstacles } from '../../utils/mapObstacles'
 import { placeFromCoords } from '../../utils/places'
 import { CitiesLayer } from './CitiesLayer'
+import { TemperatureLegend } from './TemperatureLegend'
 
 interface Props {
   selected: Place | null
@@ -57,6 +58,8 @@ export function WeatherMap({ selected, myLocation, onSelect }: Props) {
           maxZoom={16}
         />
         <ZoomControl position="bottomright" />
+        {/* After the zoom control: Leaflet stacks later controls above earlier ones */}
+        <TemperatureLegend />
         <HideLeafletPrefix />
         <InvalidateSizeOnResize />
 
