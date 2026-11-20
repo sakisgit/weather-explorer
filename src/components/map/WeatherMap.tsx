@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { CircleMarker, MapContainer, Pane, TileLayer, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLon } from '../../api/types'
 import type { Place } from '../../types'
+import { BASEMAPS } from '../../data/basemaps'
 import { usePlacesStore } from '../../store/usePlacesStore'
+import { useUiStore } from '../../store/useUiStore'
 import { freeCenterOffsetY, readObstacles } from '../../utils/mapObstacles'
 import { placeFromCoords } from '../../utils/places'
 import { CitiesLayer } from './CitiesLayer'
@@ -26,72 +28,81 @@ const INITIAL_ZOOM = 4
  * work INSIDE <MapContainer>, which is why they're separate components below.
  */
 export function WeatherMap({ selected, myLocation, onSelect }: Props) {
+  const basemapId = useUiStore((s) => s.basemap)
+  const basemap = BASEMAPS[basemapId]
+
   return (
-    <MapContainer
-      center={INITIAL_CENTER}
-      zoom={INITIAL_ZOOM}
-      minZoom={2}
-      worldCopyJump // panning past the date line wraps smoothly instead of showing an empty world
-      zoomControl={false} // re-added bottom-right so it doesn't collide with the search box
-      className="h-full w-full"
-    >
-      {/*
-        Esri "Dark Gray Canvas" basemap: no API key needed (CARTO now requires one),
-        attribution required. A dark, muted basemap lets the weather data stand out.
-        Note Esri's tile URL order is {z}/{y}/{x}, not the usual {z}/{x}/{y}.
+    // basemap-* lets index.css adapt the city labels to light map styles. It sits on a
+    // wrapper because react-leaflet reads MapContainer's className only once, at creation.
+    <div className={`h-full w-full basemap-${basemapId}`}>
+      <MapContainer
+        center={INITIAL_CENTER}
+        zoom={INITIAL_ZOOM}
+        minZoom={2}
+        worldCopyJump // panning past the date line wraps smoothly instead of showing an empty world
+        zoomControl={false} // re-added bottom-right so it doesn't collide with the search box
+        className="h-full w-full"
+      >
+        {/*
+        The basemap the user picked (Esri tiles, no API key needed; see data/basemaps.ts).
+        `key` re-creates the layer when the style changes: Leaflet only reads the
+        attribution when a layer is added, so this also swaps the credits.
       */}
-      <TileLayer
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-        // Open-Meteo data is CC BY 4.0, which requires visible attribution in the app.
-        attribution='Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> | Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'
-        maxZoom={16}
-      />
-      <ZoomControl position="bottomright" />
-      <HideLeafletPrefix />
+        <TileLayer
+          key={basemapId}
+          url={basemap.url}
+          // Open-Meteo data is CC BY 4.0, which requires visible attribution in the app.
+          attribution={`Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> | ${basemap.attribution}`}
+          maxZoom={16}
+        />
+        <ZoomControl position="bottomright" />
+        <HideLeafletPrefix />
+        <InvalidateSizeOnResize />
 
-      <CitiesLayer selected={selected} myLocation={myLocation} onSelect={onSelect} />
-      <MapClickHandler onSelect={onSelect} />
-      <FlyToSelected selected={selected} />
+        <CitiesLayer selected={selected} myLocation={myLocation} onSelect={onSelect} />
+        <MapClickHandler onSelect={onSelect} />
+        <FlyToSelected selected={selected} />
 
-      {/*
+        {/*
         The dots live in their own pane just BELOW the city labels (z-index 350).
         Where a dot sits under a label, CitiesLayer highlights that label instead,
         so the label's weather is never covered by a dot.
         CircleMarker is drawn as SVG, so it avoids Leaflet's well-known
         "missing default marker icon" problem with bundlers like Vite.
       */}
-      <Pane name="points" style={{ zIndex: 340 }}>
-        <SavedPlacesMarkers onSelect={onSelect} />
-        {/* The user's position stays visible even after selecting other places. */}
-        {myLocation && (
-          <CircleMarker
-            center={[myLocation.lat, myLocation.lon]}
-            radius={6}
-            pathOptions={{ color: '#fff', weight: 2, fillColor: '#22c55e', fillOpacity: 1 }}
-            // Don't let the click also reach the map (which would select raw coordinates)
-            bubblingMouseEvents={false}
-            eventHandlers={{ click: () => onSelect(placeFromCoords(myLocation.lat, myLocation.lon, 'My location')) }}
-          >
-            <Tooltip direction="top" offset={[0, -6]}>
-              You are here
-            </Tooltip>
-          </CircleMarker>
-        )}
+        <Pane name="points" style={{ zIndex: 340 }}>
+          <SavedPlacesMarkers onSelect={onSelect} />
+          {/* The user's position stays visible even after selecting other places. */}
+          {myLocation && (
+            <CircleMarker
+              center={[myLocation.lat, myLocation.lon]}
+              radius={6}
+              pathOptions={{ color: '#fff', weight: 2, fillColor: '#22c55e', fillOpacity: 1 }}
+              // Don't let the click also reach the map (which would select raw coordinates)
+              bubblingMouseEvents={false}
+              eventHandlers={{ click: () => onSelect(placeFromCoords(myLocation.lat, myLocation.lon, 'My location')) }}
+            >
+              <Tooltip direction="top" offset={[0, -6]}>
+                You are here
+              </Tooltip>
+            </CircleMarker>
+          )}
 
-        {selected && (
-          <CircleMarker
-            center={[selected.lat, selected.lon]}
-            radius={9}
-            pathOptions={{ color: '#fff', weight: 2, fillColor: '#0ea5e9', fillOpacity: 1 }}
-            bubblingMouseEvents={false}
-          >
-            <Tooltip direction="top" offset={[0, -8]}>
-              {selected.name}
-            </Tooltip>
-          </CircleMarker>
-        )}
-      </Pane>
-    </MapContainer>
+          {selected && (
+            <CircleMarker
+              center={[selected.lat, selected.lon]}
+              radius={9}
+              pathOptions={{ color: '#fff', weight: 2, fillColor: '#0ea5e9', fillOpacity: 1 }}
+              bubblingMouseEvents={false}
+            >
+              <Tooltip direction="top" offset={[0, -8]}>
+                {selected.name}
+              </Tooltip>
+            </CircleMarker>
+          )}
+        </Pane>
+      </MapContainer>
+    </div>
   )
 }
 
@@ -105,6 +116,21 @@ function HideLeafletPrefix() {
   const map = useMap()
   useEffect(() => {
     map.attributionControl.setPrefix(false)
+  }, [map])
+  return null
+}
+
+/**
+ * Leaflet measures its container once. When the container changes size without a
+ * window resize (the side panel opening or closing), the map must be told, or it
+ * leaves grey gaps and miscalculates positions. A ResizeObserver catches every case.
+ */
+function InvalidateSizeOnResize() {
+  const map = useMap()
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.invalidateSize())
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
   }, [map])
   return null
 }

@@ -3,10 +3,12 @@ import type { LatLon } from './api/types'
 import { WeatherMap } from './components/map/WeatherMap'
 import { PlaceDetails } from './components/panels/PlaceDetails'
 import { SavedPlaces } from './components/panels/SavedPlaces'
+import { BasemapSwitcher } from './components/ui/BasemapSwitcher'
 import { LocateButton } from './components/ui/LocateButton'
 import { SearchBox } from './components/ui/SearchBox'
 import { useGeolocation } from './hooks/useGeolocation'
 import { usePlacesStore } from './store/usePlacesStore'
+import { useUiStore } from './store/useUiStore'
 import type { Place } from './types'
 import { placeFromCoords } from './utils/places'
 
@@ -28,12 +30,20 @@ function App() {
   const [myLocation, setMyLocation] = useState<LatLon | null>(null)
   const [tab, setTab] = useState<Tab>('details')
   const savedCount = usePlacesStore((s) => s.places.length)
+  // Collapsed or expanded panel: a persisted preference (useUiStore).
+  const panelOpen = useUiStore((s) => s.panelOpen)
+  const setPanelOpen = useUiStore((s) => s.setPanelOpen)
 
-  // Selecting a place from anywhere (search, map, city, saved list) shows its details.
-  const selectPlace = useCallback((place: Place) => {
-    setSelected(place)
-    setTab('details')
-  }, [])
+  // Selecting a place from anywhere (search, map, city, saved list) shows its details,
+  // so a collapsed panel opens again: that's where the details are.
+  const selectPlace = useCallback(
+    (place: Place) => {
+      setSelected(place)
+      setTab('details')
+      setPanelOpen(true)
+    },
+    [setPanelOpen],
+  )
 
   // useCallback: a stable function, so the hook doesn't see a "new" callback every render.
   const onLocated = useCallback(
@@ -47,49 +57,67 @@ function App() {
 
   return (
     <div className="flex h-full flex-col md:flex-row">
-      <aside className="order-2 flex h-1/2 w-full flex-col border-slate-800 bg-slate-900 md:order-1 md:h-full md:w-96 md:border-r">
-        <header className="border-b border-slate-800 px-4 pt-4">
-          <div className="flex items-center gap-3">
+      {/*
+        Expanded: a 384px side panel (desktop) or the bottom half of the screen (phone).
+        Collapsed: a narrow strip with the icon and the toggle (desktop), or just the
+        title bar (phone), and the map takes the freed space.
+      */}
+      <aside
+        id="side-panel"
+        className={`order-2 flex w-full flex-col border-slate-800 bg-slate-900 transition-[width] duration-200 md:order-1 md:h-full md:border-r ${
+          panelOpen ? 'h-1/2 md:w-96' : 'md:w-14'
+        }`}
+      >
+        <header className={`border-slate-800 px-4 pt-4 ${panelOpen ? 'border-b' : 'pb-3 md:px-2.5 md:pb-0'}`}>
+          <div className={`flex items-center gap-3 ${panelOpen ? '' : 'md:flex-col'}`}>
             {/* Same file as the browser-tab icon (public/favicon.svg). Decorative: the title says it all. */}
             <img src="/favicon.svg" alt="" className="h-9 w-9 shrink-0 drop-shadow" />
-            <div>
-              <h1 className="text-lg leading-tight font-semibold tracking-tight">Weather Explorer</h1>
-              <p className="hidden text-sm text-slate-400 md:block">Explore the weather anywhere in the world</p>
+            <div className={`min-w-0 flex-1 ${panelOpen ? '' : 'md:hidden'}`}>
+              <h1 className="truncate text-lg leading-tight font-semibold tracking-tight">Weather Explorer</h1>
+              {panelOpen && (
+                <p className="hidden text-xs text-slate-400 md:block">Explore the weather anywhere in the world</p>
+              )}
             </div>
+            <PanelToggle open={panelOpen} onClick={() => setPanelOpen(!panelOpen)} />
           </div>
 
-          <nav role="tablist" aria-label="Panel" className="mt-3 flex gap-1">
-            <TabButton active={tab === 'details'} onClick={() => setTab('details')}>
-              Details
-            </TabButton>
-            <TabButton active={tab === 'places'} onClick={() => setTab('places')}>
-              ★ My places{savedCount > 0 && <span className="ml-1 text-slate-400">({savedCount})</span>}
-            </TabButton>
-          </nav>
+          {panelOpen && (
+            <nav role="tablist" aria-label="Panel" className="mt-3 flex gap-1">
+              <TabButton active={tab === 'details'} onClick={() => setTab('details')}>
+                Details
+              </TabButton>
+              <TabButton active={tab === 'places'} onClick={() => setTab('places')}>
+                ★ My places{savedCount > 0 && <span className="ml-1 text-slate-400">({savedCount})</span>}
+              </TabButton>
+            </nav>
+          )}
         </header>
 
-        <div role="tabpanel" className="flex-1 overflow-y-auto p-4 text-sm text-slate-400">
-          {tab === 'places' ? (
-            <SavedPlaces onSelect={selectPlace} />
-          ) : selected ? (
-            <PlaceDetails place={selected} />
-          ) : (
-            <EmptyState onLocate={geo.locate} />
-          )}
-        </div>
+        {panelOpen && (
+          <div role="tabpanel" className="flex-1 overflow-y-auto p-4 text-sm text-slate-400">
+            {tab === 'places' ? (
+              <SavedPlaces onSelect={selectPlace} />
+            ) : selected ? (
+              <PlaceDetails place={selected} />
+            ) : (
+              <EmptyState onLocate={geo.locate} />
+            )}
+          </div>
+        )}
       </aside>
 
-      <main className="relative order-1 h-1/2 flex-1 md:order-2 md:h-full">
+      <main className={`relative order-1 min-h-0 flex-1 md:order-2 md:h-full ${panelOpen ? 'h-1/2' : ''}`}>
         <WeatherMap selected={selected} myLocation={myLocation} onSelect={selectPlace} />
 
         {/* Floats above the map. Leaflet panes use z-index up to ~1000, so we go higher. */}
-        <div className="absolute top-3 right-3 left-3 z-[1100] sm:right-auto sm:w-96">
+        <div className="absolute top-3 right-3 left-3 z-[1100] sm:right-auto sm:w-[27rem]">
           {/* data-map-obstacle: the map won't place city labels under this element */}
           <div className="flex gap-2" data-map-obstacle>
             <div className="flex-1">
               <SearchBox onSelect={selectPlace} />
             </div>
             <LocateButton onClick={geo.locate} locating={geo.status === 'locating'} />
+            <BasemapSwitcher />
           </div>
 
           {geo.error && (
@@ -120,6 +148,39 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       }`}
     >
       {children}
+    </button>
+  )
+}
+
+/**
+ * Arrow that collapses / expands the panel. One chevron icon, rotated to point the
+ * way the panel will move: left/right on desktop (side panel), down/up on phones
+ * (bottom panel).
+ */
+function PanelToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      aria-controls="side-panel"
+      aria-label={open ? 'Collapse panel' : 'Expand panel'}
+      title={open ? 'Collapse panel' : 'Expand panel'}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-sky-500 hover:text-sky-400"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className={`h-4 w-4 transition-transform ${open ? 'rotate-90 md:rotate-180' : '-rotate-90 md:rotate-0'}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {/* Chevron pointing right; the rotation above turns it */}
+        <path d="m9 6 6 6-6 6" />
+      </svg>
     </button>
   )
 }

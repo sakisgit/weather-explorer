@@ -83,6 +83,25 @@ body {
 .city-label.is-me {
   box-shadow: 0 0 0 2px #22c55e; /* same green as the my-location dot */
 }
+/*
+ * On the light and color basemaps the white names would vanish, so every label gets
+ * a small dark pill (like the highlighted ones), matching the dark UI around the map.
+ */
+.basemap-light .city-label,
+.basemap-color .city-label {
+  width: fit-content;
+  margin: -3px auto 0; /* cancels the padding, so the label stays on its coordinate */
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: rgb(2 6 23 / 0.72);
+  text-shadow: none;
+}
+.basemap-light .leaflet-container {
+  @apply bg-zinc-200; /* behind tiles while they load */
+}
+.basemap-color .leaflet-container {
+  @apply bg-sky-100;
+}
 .city-label:hover .city-name {
   @apply underline;
 }
