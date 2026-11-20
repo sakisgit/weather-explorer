@@ -16,7 +16,8 @@ interface Basemap {
 const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services'
 
 export const BASEMAPS: Record<BasemapId, Basemap> = {
-  // Dark and muted, so the weather data stands out (the default).
+  // Dark and muted, so the weather data stands out. The default on dark-mode devices
+  // (light-mode devices start on "light", see useUiStore).
   dark: {
     label: 'Dark',
     url: `${ESRI}/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`,

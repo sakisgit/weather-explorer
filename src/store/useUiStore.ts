@@ -14,6 +14,15 @@ interface UiState {
 }
 
 /**
+ * First visit: the map style follows the device's light / dark setting.
+ * After that, the user's own choice (saved below) wins.
+ */
+function deviceBasemap(): BasemapId {
+  const prefersLight = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches
+  return prefersLight ? 'light' : 'dark'
+}
+
+/**
  * The user's display preferences. Like the saved places, they persist in
  * localStorage, so the app opens the way the user left it.
  */
@@ -21,7 +30,7 @@ export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
       panelOpen: true,
-      basemap: 'dark',
+      basemap: deviceBasemap(),
       mapControlsOpen: true,
       setPanelOpen: (panelOpen) => set({ panelOpen }),
       setBasemap: (basemap) => set({ basemap }),
