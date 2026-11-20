@@ -17,7 +17,7 @@ Built with React, TypeScript, Leaflet and the [Open-Meteo](https://open-meteo.co
 - **My places.** Save up to 12 places (persisted in `localStorage`) and compare them: current weather, today's high/low and rain chance, sorting by temperature, and a 7-day high-temperature chart.
 - **Map styles.** Switch the basemap between Dark (the default, so the weather stands out), Light and Color (topographic). On the lighter maps every city label gets a dark card so it stays readable.
 - **Collapsible panel.** An arrow collapses the side panel (or the bottom panel on phones) to give the map the whole screen; collapsed, it keeps an icon rail for the two tabs (with a badge for the saved places count). Picking a place opens it again. The panel state and the map style are remembered between visits.
-- Responsive layout: map and side panel on desktop, map above the panel on mobile. On a phone the map controls get more compact, and a selected place is centred in the part of the map not covered by the search box or the time slider.
+- Responsive layout: map and side panel on desktop, map above the panel on mobile. On a phone the map controls get more compact, and a selected place is centred in the part of the map not covered by the search box or the timeline.
 
 ## 1. Installation and setup
 
@@ -65,12 +65,12 @@ I chose React because it is what I know best. The role mentions Vue/Nuxt as a pl
 src/
   api/          typed fetch functions (openMeteo.ts, geocoding.ts), HTTP error handling
   hooks/        data hooks (useForecast, useMapWeather, useGeocodingSearch, useGeolocation, ...)
-  store/        Zustand store for saved places
+  store/        Zustand stores: saved places, and UI preferences (panel, map style, timeline)
   components/
-    map/        WeatherMap, CitiesLayer (overview + time slider)
-    panels/     PlaceDetails, ForecastChart, DailyForecast, SavedPlaces, CompareChart
-    ui/         SearchBox, LocateButton, SaveButton, TimeSlider
-  data/         static list of cities for the map overview
+    map/        WeatherMap, CitiesLayer (overview + timeline), TemperatureLegend
+    panels/     PlaceDetails, ForecastChart, DailyForecast, SavedPlaces, CompareChart, chartTheme
+    ui/         SearchBox, LocateButton, BasemapSwitcher, SaveButton, TimeSlider, WeatherIcon
+  data/         static list of cities for the map overview, basemap definitions
   utils/        weather codes, formatting, time zones, city selection, color scale
 ```
 
@@ -97,9 +97,9 @@ Open-Meteo's free tier allows roughly 600 calls per minute and 10,000 per day **
 - **Map controls follow the map's width, not the screen's.** The map area is a CSS container, and the floating controls use container queries (Tailwind `@lg:`, `@2xl:`). On a tablet with the side panel open the screen is wide but the map is narrow, and media queries made the search bar overflow it.
 - **Tested across browsers and screens.** With Playwright on Chromium (Chrome, Edge, Android), WebKit (Safari on iPhone, iPad and Mac) and Firefox, at 17 sizes from an iPhone SE to a 2560px monitor: no horizontal scroll, no overlapping controls, no city labels under the controls, no console errors.
 - **Weather icons as static files.** The Meteocons SVGs live in `public/weather-icons/`, so the browser downloads only the ones on screen and caches them, and they add nothing to the JavaScript bundle. The panel uses the animated versions; the map uses static ones, because 50+ icons moving at once would distract and cost CPU.
-- **Lazy-loaded charts.** Chart.js was about a third of the bundle but is only needed once a place is opened. Both chart components are loaded with `React.lazy` + `Suspense` (with a placeholder of the same height, so the layout doesn't jump), which takes the initial JavaScript from 202 kB to 139 kB gzipped and removes Vite's large-chunk warning.
+- **Lazy-loaded charts.** Chart.js was about a third of the bundle but is only needed once a place is opened. Both chart components are loaded with `React.lazy` + `Suspense` (with a placeholder of the same height, so the layout doesn't jump), which took the initial JavaScript from 202 kB to 139 kB gzipped (about 145 kB today, after later features) and removes Vite's large-chunk warning.
 - **Geolocation.** The app never shows the permission prompt on page load, because unprompted requests tend to get denied permanently. It uses the Permissions API to locate automatically only if permission was already granted; otherwise it waits for a click. Errors (denied, unavailable, timeout) show friendly messages with alternatives.
-- **Basemap.** Esri "World Dark Gray" tiles: no API key, and a muted dark style that lets the weather data stand out. CARTO dark tiles were my first choice, but they now require an API key, and a key in a public, client-side app would be visible to everyone.
+- **Basemaps.** Esri tiles (Dark Gray, Light Gray and Topographic): no API key needed. Dark is the default because a muted dark map lets the weather colors stand out. CARTO dark tiles were my first choice, but they now require an API key, and a key in a public, client-side app would be visible to everyone.
 - **Accessibility.** The search box follows the ARIA combobox pattern, the tabs use `tablist`/`tab` roles, the time slider is a native range input with `aria-valuetext`, the save button uses `aria-pressed`, and loading and error states are announced.
 
 ## 3. Incomplete requirements and known limitations
@@ -108,13 +108,16 @@ All the requirements in the brief are implemented. Known limitations:
 
 - **No reverse geocoding.** Open-Meteo has no coordinates-to-name API, so a point clicked on the map is named by its coordinates (e.g. `40.64°N, 22.94°E`). Cities on the map, search results and "My location" do have names.
 - **The map overview uses a fixed list of cities.** It covers the world, with more detail in Europe and Greece, but zooming into a sparse region shows few labels. Any point can still be clicked.
-- **No automated tests.** Correctness was checked by type-checking, linting, manual testing and checks against live API responses.
+- **No automated test suite in the repository.** Correctness was checked by type-checking, linting, manual testing, checks against live API responses and ad-hoc Playwright scripts (see "Tested across browsers and screens" above), which are not part of the repo.
+- **Rate limits are per IP.** Normal use stays far below Open-Meteo's limits, but very heavy use from one IP (for example running automated browser tests many times) can reach them. The app then shows "Data unavailable" on the map and recovers by itself once the limit resets.
+- On a phone in landscape the map gets little height while the panel is open; collapsing the panel gives it the whole screen.
 - **Celsius only.** There is no °C/°F toggle yet.
 - In the compare chart, day labels come from the first place's dates, so places in very different time zones may be offset by a day.
 
 ## 4. Next steps
 
-- **Tests.** Unit tests (Vitest) for the pure logic: city selection and collision detection, time-slot helpers, color scale, coordinate rounding. Component tests for search and saving. One Playwright end-to-end test of the main flow.
+- **Tests.** Unit tests (Vitest) for the pure logic: city selection and collision detection, time-slot helpers, color scale, coordinate rounding. Component tests for search and saving. Turn the ad-hoc Playwright checks (main flow, several browsers and screen sizes) into an end-to-end suite that runs in CI, with the API mocked so it never hits the rate limits.
+- **Names for clicked points** with a reverse-geocoding service (e.g. OpenStreetMap Nominatim), since Open-Meteo has none.
 - **More map layers.** An interpolated temperature or precipitation overlay (canvas heatmap), and switching the map between temperature, rain and wind.
 - °C/°F and km/h/mph toggles, persisted with the saved places.
 - Shareable URLs: put the selected place and the time slider position in the URL.
@@ -130,5 +133,6 @@ All the requirements in the brief are implemented. Known limitations:
   - A lint warning revealed a suppressed `useEffect` dependency issue. It was fixed properly instead of being silenced.
   - Testing in the browser revealed a hover text that did not follow the time slider (react-leaflet only reads a marker's `title` on creation).
   - An index-based match between saved places and API results could show the wrong weather after a removal. It now matches by coordinates.
+  - Browser tests found that typing fast and pressing Enter could open a result of the previous search, and that the map controls overflowed a narrow map on tablets. Both were fixed (outdated-results flag; container queries).
 - **Commit history.** Each step of the build is a separate commit with a description of what changed and why.
 - **Credits.** Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0). Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors. Attribution is shown on the map. Weather icons: [Meteocons](https://github.com/basmilius/weather-icons) by Bas Milius (MIT, license in `public/weather-icons/`). UI icons: [Lucide](https://lucide.dev) (ISC).
