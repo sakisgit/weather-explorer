@@ -49,8 +49,14 @@ function App() {
     <div className="flex h-full flex-col md:flex-row">
       <aside className="order-2 flex h-1/2 w-full flex-col border-slate-800 bg-slate-900 md:order-1 md:h-full md:w-96 md:border-r">
         <header className="border-b border-slate-800 px-4 pt-4">
-          <h1 className="text-lg font-semibold">Weather Explorer</h1>
-          <p className="hidden text-sm text-slate-400 md:block">Explore the weather anywhere in the world</p>
+          <div className="flex items-center gap-3">
+            {/* Same file as the browser-tab icon (public/favicon.svg). Decorative: the title says it all. */}
+            <img src="/favicon.svg" alt="" className="h-9 w-9 shrink-0 drop-shadow" />
+            <div>
+              <h1 className="text-lg leading-tight font-semibold tracking-tight">Weather Explorer</h1>
+              <p className="hidden text-sm text-slate-400 md:block">Explore the weather anywhere in the world</p>
+            </div>
+          </div>
 
           <nav role="tablist" aria-label="Panel" className="mt-3 flex gap-1">
             <TabButton active={tab === 'details'} onClick={() => setTab('details')}>

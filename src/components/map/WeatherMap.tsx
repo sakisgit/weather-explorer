@@ -47,6 +47,7 @@ export function WeatherMap({ selected, myLocation, onSelect }: Props) {
         maxZoom={16}
       />
       <ZoomControl position="bottomright" />
+      <HideLeafletPrefix />
 
       <CitiesLayer selected={selected} myLocation={myLocation} onSelect={onSelect} />
       <MapClickHandler onSelect={onSelect} />
@@ -92,6 +93,20 @@ export function WeatherMap({ selected, myLocation, onSelect }: Props) {
       </Pane>
     </MapContainer>
   )
+}
+
+/**
+ * Keeps only the credits the licenses require (Open-Meteo, Esri, OpenStreetMap) by
+ * removing Leaflet's optional "Leaflet" prefix. It must be done on the map's OWN
+ * attribution control: layers only register their credits there, so a separately
+ * created <AttributionControl> would stay empty. Styled dark in index.css.
+ */
+function HideLeafletPrefix() {
+  const map = useMap()
+  useEffect(() => {
+    map.attributionControl.setPrefix(false)
+  }, [map])
+  return null
 }
 
 /** Clicking anywhere on the map selects that point. */

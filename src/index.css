@@ -16,6 +16,28 @@ body {
   @apply bg-slate-950 font-sans;
 }
 
+/*
+ * Map credits: dark and discreet to match the app, instead of Leaflet's light grey box.
+ * The text must stay readable, since the licenses require the credits to be visible.
+ */
+.leaflet-container .leaflet-control-attribution {
+  @apply rounded-tl-md bg-slate-950/70 px-2 py-0.5 text-[10px] text-slate-400 backdrop-blur-sm;
+}
+.leaflet-container .leaflet-control-attribution a {
+  @apply text-slate-300 no-underline hover:text-sky-400 hover:underline;
+}
+
+/* Zoom buttons: dark like the rest of the map UI, instead of Leaflet's white */
+.leaflet-container .leaflet-bar {
+  @apply overflow-hidden rounded-lg border-slate-700 shadow-lg;
+}
+.leaflet-container .leaflet-bar a {
+  @apply border-slate-700 bg-slate-900/90 text-slate-200 backdrop-blur hover:bg-slate-800 hover:text-white;
+}
+.leaflet-container .leaflet-bar a.leaflet-disabled {
+  @apply bg-slate-900/60 text-slate-600;
+}
+
 /* City weather labels on the map (Leaflet DivIcons are HTML strings, so they are styled here). */
 .city-marker {
   background: none;
