@@ -41,7 +41,8 @@ export function WeatherMap({ selected, myLocation, onSelect }: Props) {
       */}
       <TileLayer
         url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-        attribution="Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors"
+        // Open-Meteo data is CC BY 4.0, which requires visible attribution in the app.
+        attribution='Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> | Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'
         maxZoom={16}
       />
       <ZoomControl position="bottomright" />
