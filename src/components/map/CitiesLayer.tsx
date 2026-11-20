@@ -277,7 +277,10 @@ function Timeline({
       // two lines there. Wide map (@2xl = 42rem+, a container query on the map): centered, at most 36rem wide,
       // leaving room for the zoom buttons. Collapsed: only as wide as its content.
       className={`absolute bottom-12 left-3 z-[1000] rounded-xl border border-slate-700/60 bg-slate-900/90 py-2 pr-2 pl-2 text-slate-300 shadow-lg backdrop-blur @2xl:bottom-6 @2xl:left-1/2 @2xl:-translate-x-1/2 @2xl:pr-3 ${
-        collapsed ? 'overflow-hidden' : 'right-14 @2xl:right-auto @2xl:w-[min(36rem,calc(100%-9rem))]'
+        collapsed
+          ? 'overflow-hidden'
+          : // right: clear of the zoom buttons, and from @md also of the legend above them
+            'right-14 @md:right-[4.5rem] @2xl:right-auto @2xl:w-[min(36rem,calc(100%-9rem))]'
       }`}
     >
       {children}
