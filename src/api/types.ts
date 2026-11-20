@@ -47,11 +47,15 @@ export interface ForecastResponse {
   daily: DailyWeather
 }
 
-/** Lightweight response used when we need many locations at once (compare view, map grid). */
-export interface CurrentOnlyResponse {
+/**
+ * Response used by the compare view: current conditions + 7 daily summaries,
+ * for MANY saved places in one request.
+ */
+export interface CompareResponse {
   latitude: number
   longitude: number
   current: Pick<CurrentWeather, 'time' | 'temperature_2m' | 'weather_code' | 'wind_speed_10m' | 'is_day'>
+  daily: Pick<DailyWeather, 'time' | 'temperature_2m_max' | 'temperature_2m_min' | 'precipitation_probability_max'>
 }
 
 /**

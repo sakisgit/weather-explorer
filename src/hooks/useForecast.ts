@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { fetchCurrentBatch, fetchForecast } from '../api/openMeteo'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { fetchCompareBatch, fetchForecast } from '../api/openMeteo'
 import type { LatLon } from '../api/types'
 import { roundLatLon } from '../utils/coords'
 
@@ -19,13 +19,31 @@ export function useForecast(point: LatLon | null) {
   })
 }
 
-/** Current conditions for many places in one request (compare view). */
-export function useCurrentBatch(points: LatLon[]) {
+/** Lookup key for a place in the compare results: its rounded coordinates. */
+export function compareKey(point: LatLon): string {
+  const r = roundLatLon(point)
+  return `${r.lat},${r.lon}`
+}
+
+/**
+ * Compare data for all saved places in ONE request.
+ *
+ * Returns a Map keyed by coordinates (not an array by position): with
+ * keepPreviousData the OLD result is shown while the new one loads, and after
+ * removing a place the positions shift, so index-based matching would show
+ * the wrong weather for a moment. Matching by coordinates is always correct.
+ */
+export function useCompareForecast(points: LatLon[]) {
   const rounded = points.map((p) => roundLatLon(p))
 
   return useQuery({
-    queryKey: ['current-batch', rounded.map((p) => `${p.lat},${p.lon}`).join('|')],
-    queryFn: ({ signal }) => fetchCurrentBatch(rounded, signal),
+    queryKey: ['compare', rounded.map((p) => `${p.lat},${p.lon}`).join('|')],
+    queryFn: async ({ signal }) => {
+      const results = await fetchCompareBatch(rounded, signal)
+      // Results come back in request order: pair them with the coordinates we asked for.
+      return new Map(results.map((r, i) => [compareKey(rounded[i]), r]))
+    },
     enabled: rounded.length > 0,
+    placeholderData: keepPreviousData,
   })
 }

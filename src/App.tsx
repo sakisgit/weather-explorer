@@ -2,11 +2,15 @@ import { useCallback, useState } from 'react'
 import type { LatLon } from './api/types'
 import { WeatherMap } from './components/map/WeatherMap'
 import { PlaceDetails } from './components/panels/PlaceDetails'
+import { SavedPlaces } from './components/panels/SavedPlaces'
 import { LocateButton } from './components/ui/LocateButton'
 import { SearchBox } from './components/ui/SearchBox'
 import { useGeolocation } from './hooks/useGeolocation'
+import { usePlacesStore } from './store/usePlacesStore'
 import type { Place } from './types'
 import { placeFromCoords } from './utils/places'
+
+type Tab = 'details' | 'places'
 
 /**
  * Root layout.
@@ -16,28 +20,52 @@ import { placeFromCoords } from './utils/places'
  *
  * `selected` lives here because both the map (marker, fly-to) and the panel
  * (details) need it: "lift state up" to the closest common parent.
+ * Saved places live in a Zustand store instead, because they must persist and
+ * are read by several unrelated components (panel, save button, map markers).
  */
 function App() {
   const [selected, setSelected] = useState<Place | null>(null)
   const [myLocation, setMyLocation] = useState<LatLon | null>(null)
+  const [tab, setTab] = useState<Tab>('details')
+  const savedCount = usePlacesStore((s) => s.places.length)
+
+  // Selecting a place from anywhere (search, map, city, saved list) shows its details.
+  const selectPlace = useCallback((place: Place) => {
+    setSelected(place)
+    setTab('details')
+  }, [])
 
   // useCallback: a stable function, so the hook doesn't see a "new" callback every render.
-  const onLocated = useCallback((pos: LatLon) => {
-    setMyLocation(pos)
-    setSelected(placeFromCoords(pos.lat, pos.lon, 'My location'))
-  }, [])
+  const onLocated = useCallback(
+    (pos: LatLon) => {
+      setMyLocation(pos)
+      selectPlace(placeFromCoords(pos.lat, pos.lon, 'My location'))
+    },
+    [selectPlace],
+  )
   const geo = useGeolocation({ onLocated })
 
   return (
     <div className="flex h-full flex-col md:flex-row">
       <aside className="order-2 flex h-1/2 w-full flex-col border-slate-800 bg-slate-900 md:order-1 md:h-full md:w-96 md:border-r">
-        <header className="border-b border-slate-800 p-4">
+        <header className="border-b border-slate-800 px-4 pt-4">
           <h1 className="text-lg font-semibold">Weather Explorer</h1>
           <p className="text-sm text-slate-400">Explore the weather anywhere in the world</p>
+
+          <nav role="tablist" aria-label="Panel" className="mt-3 flex gap-1">
+            <TabButton active={tab === 'details'} onClick={() => setTab('details')}>
+              Details
+            </TabButton>
+            <TabButton active={tab === 'places'} onClick={() => setTab('places')}>
+              ★ My places{savedCount > 0 && <span className="ml-1 text-slate-400">({savedCount})</span>}
+            </TabButton>
+          </nav>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-400">
-          {selected ? (
+        <div role="tabpanel" className="flex-1 overflow-y-auto p-4 text-sm text-slate-400">
+          {tab === 'places' ? (
+            <SavedPlaces onSelect={selectPlace} />
+          ) : selected ? (
             <PlaceDetails place={selected} />
           ) : (
             <EmptyState onLocate={geo.locate} />
@@ -46,13 +74,13 @@ function App() {
       </aside>
 
       <main className="relative order-1 h-1/2 flex-1 md:order-2 md:h-full">
-        <WeatherMap selected={selected} myLocation={myLocation} onSelect={setSelected} />
+        <WeatherMap selected={selected} myLocation={myLocation} onSelect={selectPlace} />
 
         {/* Floats above the map. Leaflet panes use z-index up to ~1000, so we go higher. */}
         <div className="absolute top-3 right-3 left-3 z-[1100] sm:right-auto sm:w-96">
           <div className="flex gap-2">
             <div className="flex-1">
-              <SearchBox onSelect={setSelected} />
+              <SearchBox onSelect={selectPlace} />
             </div>
             <LocateButton onClick={geo.locate} locating={geo.status === 'locating'} />
           </div>
@@ -74,10 +102,25 @@ function App() {
   )
 }
 
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${
+        active ? 'border-sky-500 text-slate-100' : 'border-transparent text-slate-400 hover:text-slate-200'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
 function EmptyState({ onLocate }: { onLocate: () => void }) {
   return (
     <div className="space-y-3">
-      <p>Search for a city, click anywhere on the map, or see the weather where you are.</p>
+      <p>Search for a city, click a city or anywhere on the map, or see the weather where you are.</p>
       <button
         onClick={onLocate}
         className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"

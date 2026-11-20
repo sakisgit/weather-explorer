@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { CircleMarker, MapContainer, TileLayer, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLon } from '../../api/types'
 import type { Place } from '../../types'
+import { usePlacesStore } from '../../store/usePlacesStore'
 import { placeFromCoords } from '../../utils/places'
 import { CitiesLayer } from './CitiesLayer'
 
@@ -47,6 +48,7 @@ export function WeatherMap({ selected, myLocation, onSelect }: Props) {
 
       <CitiesLayer onSelect={onSelect} />
       <MapClickHandler onSelect={onSelect} />
+      <SavedPlacesMarkers onSelect={onSelect} />
       <FlyToSelected selected={selected} />
 
       {/*
@@ -111,4 +113,24 @@ function FlyToSelected({ selected }: { selected: Place | null }) {
   }, [map, lat, lon])
 
   return null
+}
+
+/** A small amber dot for every saved place, so the collection is visible on the map. */
+function SavedPlacesMarkers({ onSelect }: { onSelect: (place: Place) => void }) {
+  const places = usePlacesStore((s) => s.places)
+
+  return places.map((place) => (
+    <CircleMarker
+      key={place.id}
+      center={[place.lat, place.lon]}
+      radius={5}
+      pathOptions={{ color: '#0f172a', weight: 1.5, fillColor: '#f59e0b', fillOpacity: 1 }}
+      bubblingMouseEvents={false}
+      eventHandlers={{ click: () => onSelect(place) }}
+    >
+      <Tooltip direction="top" offset={[0, -5]}>
+        ★ {place.name}
+      </Tooltip>
+    </CircleMarker>
+  ))
 }

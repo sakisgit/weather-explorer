@@ -2,6 +2,7 @@ import { useForecast } from '../../hooks/useForecast'
 import type { Place } from '../../types'
 import { degreesToCompass, formatHour, formatTemp, toHourSlot } from '../../utils/format'
 import { getWeatherInfo } from '../../utils/weatherCodes'
+import { SaveButton } from '../ui/SaveButton'
 import { DailyForecast } from './DailyForecast'
 import { ForecastChart } from './ForecastChart'
 
@@ -14,9 +15,12 @@ export function PlaceDetails({ place }: { place: Place }) {
 
   return (
     <article className="space-y-5">
-      <header>
-        <h2 className="text-xl font-semibold text-slate-100">{place.name}</h2>
-        {place.subtitle && <p className="text-sm text-slate-400">{place.subtitle}</p>}
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-xl font-semibold text-slate-100">{place.name}</h2>
+          {place.subtitle && <p className="text-sm text-slate-400">{place.subtitle}</p>}
+        </div>
+        <SaveButton place={place} />
       </header>
 
       {isPending && <DetailsSkeleton />}

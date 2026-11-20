@@ -1,5 +1,5 @@
 import { getJson } from './http'
-import type { CurrentOnlyResponse, ForecastResponse, GridPointForecast, LatLon } from './types'
+import type { CompareResponse, ForecastResponse, GridPointForecast, LatLon } from './types'
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'
 
@@ -41,23 +41,27 @@ export function fetchForecast({ lat, lon }: LatLon, signal?: AbortSignal) {
 }
 
 /**
- * Current conditions for MANY places in a SINGLE request.
+ * Compare data for MANY places in a SINGLE request:
+ * current conditions + 7 days of high/low/rain chance.
  *
  * Open-Meteo accepts comma-separated coordinates:
- *   ?latitude=37.98,40.64&longitude=23.72,22.94
+ *   ?latitude=37.98,40.64&longitude=23.73,22.94
  * and returns an array with one entry per location (same order).
- * Ten places = one request instead of ten, which matters for the rate limit.
+ * One HTTP request instead of one per saved place. 7 variables in total,
+ * under the 10-variable threshold where Open-Meteo starts counting extra calls.
  */
-export async function fetchCurrentBatch(points: LatLon[], signal?: AbortSignal): Promise<CurrentOnlyResponse[]> {
+export async function fetchCompareBatch(points: LatLon[], signal?: AbortSignal): Promise<CompareResponse[]> {
   if (points.length === 0) return []
 
   const params = new URLSearchParams({
     latitude: points.map((p) => p.lat).join(','),
     longitude: points.map((p) => p.lon).join(','),
     current: 'temperature_2m,weather_code,wind_speed_10m,is_day',
-    timezone: 'auto',
+    daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+    forecast_days: '7',
+    timezone: 'auto', // each place gets its own local days
   })
-  const data = await getJson<CurrentOnlyResponse | CurrentOnlyResponse[]>(`${FORECAST_URL}?${params}`, signal)
+  const data = await getJson<CompareResponse | CompareResponse[]>(`${FORECAST_URL}?${params}`, signal)
 
   // With a single location the API returns an object, not an array. Normalize.
   return Array.isArray(data) ? data : [data]
