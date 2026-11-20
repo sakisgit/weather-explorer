@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import type { CompareResponse } from '../../api/types'
 import { compareKey, useCompareForecast } from '../../hooks/useForecast'
 import { usePlacesStore } from '../../store/usePlacesStore'
@@ -6,7 +6,10 @@ import type { Place } from '../../types'
 import { formatTemp } from '../../utils/format'
 import { temperatureColor } from '../../utils/temperatureColor'
 import { getWeatherInfo } from '../../utils/weatherCodes'
-import { CompareChart } from './CompareChart'
+import { ChartPlaceholder } from '../ui/ChartPlaceholder'
+
+// Lazy-loaded like ForecastChart (see PlaceDetails): Chart.js downloads on first use.
+const CompareChart = lazy(() => import('./CompareChart').then((m) => ({ default: m.CompareChart })))
 
 type SortBy = 'saved' | 'warmest' | 'coldest'
 
@@ -107,7 +110,9 @@ export function SavedPlaces({ onSelect }: Props) {
           <h3 id="compare-title" className="mb-2 text-sm font-medium text-slate-300">
             Daily high, next 7 days
           </h3>
-          <CompareChart rows={chartRows} />
+          <Suspense fallback={<ChartPlaceholder className="h-56" />}>
+            <CompareChart rows={chartRows} />
+          </Suspense>
         </section>
       )}
     </div>

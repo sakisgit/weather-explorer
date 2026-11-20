@@ -1,10 +1,16 @@
+import { Suspense, lazy } from 'react'
 import { useForecast } from '../../hooks/useForecast'
 import type { Place } from '../../types'
 import { degreesToCompass, formatHour, formatTemp, toHourSlot } from '../../utils/format'
 import { getWeatherInfo } from '../../utils/weatherCodes'
+import { ChartPlaceholder } from '../ui/ChartPlaceholder'
 import { SaveButton } from '../ui/SaveButton'
 import { DailyForecast } from './DailyForecast'
-import { ForecastChart } from './ForecastChart'
+
+// Lazy-loaded: Chart.js is most of the bundle and isn't needed until a place is opened,
+// so Vite puts it in its own file that downloads on first use.
+// lazy() expects a default export, hence the .then() mapping of the named export.
+const ForecastChart = lazy(() => import('./ForecastChart').then((m) => ({ default: m.ForecastChart })))
 
 /**
  * "Dive into a place": current conditions, next 48 h chart and 7-day forecast.
@@ -74,7 +80,9 @@ function DetailsContent({ data }: { data: NonNullable<ReturnType<typeof useForec
         <h3 id="hourly-title" className="mb-2 text-sm font-medium text-slate-300">
           Next 48 hours
         </h3>
-        <ForecastChart hourly={hourly} startIndex={nowIndex} />
+        <Suspense fallback={<ChartPlaceholder className="h-52" />}>
+          <ForecastChart hourly={hourly} startIndex={nowIndex} />
+        </Suspense>
       </section>
 
       <section aria-labelledby="daily-title">

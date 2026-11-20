@@ -91,6 +91,7 @@ Open-Meteo's free tier allows roughly 600 calls per minute and 10,000 per day **
 
 - **Cities instead of a regular grid.** My first version drew a regular grid of points. It looked mechanical, hid the basemap and showed nameless points in the sea, so I replaced it with a curated list of about 190 cities in three importance tiers. Visible cities are picked by zoom level, and a collision check in screen pixels (Web Mercator, `L.CRS.EPSG3857`) makes sure the more important city wins when labels would overlap. Labels are also kept out from under the floating UI (search box, time slider): those elements are marked with `data-map-obstacle`, and their screen rectangles are read from the DOM, so this keeps working when the layout changes on mobile. Cities that would be hidden are not requested either. A static list costs no requests and gives the map real names.
 - **Time zones.** Place details use `timezone=auto`, so times are local to the place (Tokyo shows Tokyo time). Times are read from the string instead of `new Date()`, so they are not shifted into the viewer's time zone. The map overview uses UTC, so all cities share one clock and the slider shows the same moment everywhere; its label is shown in the viewer's own time zone.
+- **Lazy-loaded charts.** Chart.js was about a third of the bundle but is only needed once a place is opened. Both chart components are loaded with `React.lazy` + `Suspense` (with a placeholder of the same height, so the layout doesn't jump), which takes the initial JavaScript from 202 kB to 139 kB gzipped and removes Vite's large-chunk warning.
 - **Geolocation.** The app never shows the permission prompt on page load, because unprompted requests tend to get denied permanently. It uses the Permissions API to locate automatically only if permission was already granted; otherwise it waits for a click. Errors (denied, unavailable, timeout) show friendly messages with alternatives.
 - **Basemap.** Esri "World Dark Gray" tiles: no API key, and a muted dark style that lets the weather data stand out. CARTO dark tiles were my first choice, but they now require an API key, and a key in a public, client-side app would be visible to everyone.
 - **Accessibility.** The search box follows the ARIA combobox pattern, the tabs use `tablist`/`tab` roles, the time slider is a native range input with `aria-valuetext`, the save button uses `aria-pressed`, and loading and error states are announced.
@@ -103,7 +104,6 @@ All the requirements in the brief are implemented. Known limitations:
 - **The map overview uses a fixed list of cities.** It covers the world, with more detail in Europe and Greece, but zooming into a sparse region shows few labels. Any point can still be clicked.
 - **No automated tests.** Correctness was checked by type-checking, linting, manual testing and checks against live API responses.
 - **Celsius only.** There is no °C/°F toggle yet.
-- **Bundle size.** The production bundle is about 200 kB gzipped, and Vite warns about a chunk over 500 kB (minified). The charts could be lazy-loaded.
 - In the compare chart, day labels come from the first place's dates, so places in very different time zones may be offset by a day.
 
 ## 4. Next steps
@@ -114,7 +114,7 @@ All the requirements in the brief are implemented. Known limitations:
 - Shareable URLs: put the selected place and the time slider position in the URL.
 - Renaming saved places (useful for points clicked on the map) and reordering them with drag and drop.
 - Validate API responses at runtime (e.g. with Zod). Today the response types are only a promise to TypeScript.
-- Code-split the chart components, and add a PWA/offline cache for saved places.
+- A PWA/offline cache for saved places.
 - Port it to **Vue 3 / Nuxt**, as a way to learn the stack AgroApps uses.
 
 ## 5. Additional notes
