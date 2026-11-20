@@ -9,3 +9,11 @@ export function addHoursToSlot(slot: string, hours: number): string {
   d.setUTCHours(d.getUTCHours() + hours)
   return currentUtcHourSlot(d)
 }
+
+/**
+ * "2026-11-20T14:00" (UTC) -> "Fri 16:00" in the USER's own time zone.
+ * The map shows one moment for the whole world, so we label it in the viewer's clock.
+ */
+export function formatSlotForUser(slot: string): string {
+  return new Date(`${slot}:00Z`).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+}

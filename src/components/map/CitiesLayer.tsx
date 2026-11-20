@@ -1,5 +1,5 @@
 import L from 'leaflet'
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Marker, Pane, useMap, useMapEvents } from 'react-leaflet'
 import { useCurrentUtcHour } from '../../hooks/useCurrentUtcHour'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
@@ -7,14 +7,16 @@ import { useMapWeather } from '../../hooks/useMapWeather'
 import type { Place } from '../../types'
 import { type MapView, type VisibleCity, placeFromCity, selectVisibleCities } from '../../utils/cities'
 import { temperatureColor, temperatureGradientCss } from '../../utils/temperatureColor'
-import { addHoursToSlot } from '../../utils/time'
+import { addHoursToSlot, formatSlotForUser } from '../../utils/time'
 import { getWeatherInfo } from '../../utils/weatherCodes'
+import { TimeSlider } from '../ui/TimeSlider'
 
 interface Props {
   onSelect: (place: Place) => void
-  /** Hours from now to display (0 = now). Driven by the time slider in Step 6. */
-  hourOffset?: number
 }
+
+const MAX_HOURS = 48
+const PLAY_STEP_MS = 600 // one forecast hour every 0.6 s: a 48 h loop takes ~30 s
 
 /**
  * The "TV forecast" layer: city names with a weather icon and temperature.
@@ -22,13 +24,24 @@ interface Props {
  * Flow: map moves -> (debounce 400 ms) -> pick visible cities for this zoom ->
  * fetch only the cities not in cache (one batched request) -> draw markers.
  */
-export function CitiesLayer({ onSelect, hourOffset = 0 }: Props) {
+export function CitiesLayer({ onSelect }: Props) {
   const view = useMapView()
   // Wait until the user stops panning/zooming before requesting anything.
   const settledView = useDebouncedValue(view, 400)
   const cities = useMemo(() => selectVisibleCities(settledView), [settledView])
   const points = useMemo(() => cities.map((c) => c.api), [cities])
   const { data, isFetching, isError } = useMapWeather(points)
+
+  // Time slider state. Changing the hour re-reads data we ALREADY have
+  // (72 hourly values per city), so scrubbing/playing makes zero requests.
+  const [hourOffset, setHourOffset] = useState(0)
+  const [playing, setPlaying] = useState(false)
+
+  useEffect(() => {
+    if (!playing) return
+    const id = setInterval(() => setHourOffset((h) => (h + 1) % (MAX_HOURS + 1)), PLAY_STEP_MS) // loops back to "now"
+    return () => clearInterval(id)
+  }, [playing])
 
   // All cities use the same UTC hour, so the whole map shows the same moment.
   const nowSlot = useCurrentUtcHour()
@@ -58,7 +71,19 @@ export function CitiesLayer({ onSelect, hourOffset = 0 }: Props) {
         })}
       </Pane>
 
-      <Legend loading={isFetching} error={isError} />
+      <MapControlsCard loading={isFetching} error={isError}>
+        <TimeSlider
+          value={hourOffset}
+          max={MAX_HOURS}
+          onChange={(h) => {
+            setPlaying(false) // grabbing the slider stops the animation
+            setHourOffset(h)
+          }}
+          playing={playing}
+          onTogglePlay={() => setPlaying((p) => !p)}
+          label={formatSlotForUser(slot)}
+        />
+      </MapControlsCard>
     </>
   )
 }
@@ -122,21 +147,42 @@ const CityMarker = memo(function CityMarker({ city, temperature, weatherCode, is
   )
 })
 
-/** Color scale legend + loading/error status, bottom-left. pointer-events-none: clicks pass through. */
-function Legend({ loading, error }: { loading: boolean; error: boolean }) {
+/**
+ * Bottom-left card: time slider + temperature legend + loading/error status.
+ *
+ * This card lives INSIDE the Leaflet map container, so by default every click
+ * or drag on it would also reach the map (dragging the slider would pan the map,
+ * clicking would select a point). Leaflet's DomEvent helpers stop that.
+ */
+function MapControlsCard({ loading, error, children }: { loading: boolean; error: boolean; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!ref.current) return
+    L.DomEvent.disableClickPropagation(ref.current)
+    L.DomEvent.disableScrollPropagation(ref.current) // scrolling over the card doesn't zoom the map
+  }, [])
+
   return (
-    <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] w-48 rounded-lg bg-slate-900/85 p-2 text-[11px] text-slate-300 shadow-lg backdrop-blur">
-      <div className="mb-1 flex justify-between">
-        <span>Temperature</span>
-        {loading && <span className="text-sky-400">Updating…</span>}
-        {error && !loading && <span className="text-amber-400">Map data unavailable</span>}
-      </div>
-      <div className="h-2 rounded-full" style={{ background: temperatureGradientCss() }} />
-      <div className="mt-0.5 flex justify-between text-slate-400">
-        <span>-20°</span>
-        <span>0°</span>
-        <span>20°</span>
-        <span>40°</span>
+    <div
+      ref={ref}
+      className="absolute right-14 bottom-6 left-3 z-[1000] space-y-3 rounded-lg bg-slate-900/90 p-3 text-[11px] text-slate-300 shadow-lg backdrop-blur sm:right-auto sm:w-80"
+    >
+      {children}
+
+      <div>
+        <div className="mb-1 flex justify-between">
+          <span>Temperature</span>
+          {loading && <span className="text-sky-400">Updating…</span>}
+          {error && !loading && <span className="text-amber-400">Map data unavailable</span>}
+        </div>
+        <div className="h-2 rounded-full" style={{ background: temperatureGradientCss() }} />
+        <div className="mt-0.5 flex justify-between text-slate-400">
+          <span>-20°</span>
+          <span>0°</span>
+          <span>20°</span>
+          <span>40°</span>
+        </div>
       </div>
     </div>
   )
